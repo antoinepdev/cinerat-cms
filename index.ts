@@ -1,5 +1,5 @@
 import { app } from "./server.ts"
-import './bot/saveRawMovies.ts'
+import './bot/saveTelegramMovies.ts'
 import './database.ts'
 
 const port = app.get('port')
