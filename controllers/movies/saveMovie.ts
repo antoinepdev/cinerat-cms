@@ -8,12 +8,12 @@ import { groupContainerId } from "../../bot/config.ts"
 export async function saveMovie(req: Request, res: Response) {
   const body: Movie = req.body
 
-  const posterCaption = `${body.title} | ${body.titleEs.join(' | ')}\n${body.year}\n\n${body.description}`
-  const telegramPosterId: number | null = await sendPosterToGroupContainer(body.posterUrl, posterCaption)
+  const posterCaption = `${body.title} | ${body.title_es.join(' | ')}\n${body.year}\n\n${body.description}`
+  const telegramPosterId: number | null = await sendPosterToGroupContainer(body.poster, posterCaption)
   if (!telegramPosterId) return res.status(400).json({ error: 'Ha ocurrido un error al enviar el poster al grupo contenedor' })
   const movie = { ...body, telegramPosterId }
 
-  const movieCaption = `${movie.title} | ${(movie.titleEs).join(' | ')}\n${movie.year}\n${movie.language}`
+  const movieCaption = `${movie.title} | ${(movie.title_es).join(' | ')}\n${movie.year}\n${movie.language}`
   const telegramFileId: number | null = await sendMovieToGroupContainer(movie.telegramFileId, movieCaption)
   const oldTelegramFileId = movie.telegramFileId
 
@@ -23,9 +23,9 @@ export async function saveMovie(req: Request, res: Response) {
   try {
     const values = [
       movie.title,
-      movie.titleEs,
+      movie.title_es,
       movie.year,
-      movie.posterUrl,
+      movie.poster,
       movie.language,
       movie.quality,
       movie.description,
