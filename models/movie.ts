@@ -1,14 +1,17 @@
 import { z } from "zod";
 
 const MovieSchema = z.object({
-  title: z.string(),
-  title_es: z.array(z.string()).min(1),
+  title_en: z.string(),
+  title_cas: z.string().optional(),
+  title_lat: z.string().optional(),
   year: z.number().int().positive(),
-  language: z.enum(["español latino 🇲🇽", "español castellano 🇪🇸"]),
-  quality: z.enum(["HD (1040p)", "Copia de cine", "720p", "Indefinida"]),
+  language_cas: z.boolean().optional(),
+  language_lat: z.boolean().optional(),
+  quality: z.enum(["HD (1040p)", "Copia de cine", "720p", "Indefinida"]).optional(),
   poster: z.string().startsWith("https://"),
   description: z.string(),
-  telegramFileId: z.number().int(),
+  telegram_file_id_cas: z.number().int().optional(),
+  telegram_file_id_lat: z.number().int().optional(),
   catalog: z.string(),
 });
 
@@ -22,43 +25,28 @@ export interface MovieWithoutCriticalData {
   catalog: string
 }
 
-const saveEsMovieQuery = `
-      INSERT INTO movies_es (
-        title,
-        title_es,
+const saveMovieQuery = `
+      INSERT INTO movies (
+        title_en,
+        title_cas,
+        title_lat,
         year,
         poster,
-        language,
+        language_cas,
+        language_lat,
         quality,
         description,
-        telegram_file_id,
+        telegram_file_id_cas,
+        telegram_file_id_lat,
         telegram_poster_id,
-        telegram_container_group_id,
-        catalog
+        catalog,
+        telegram_container_group_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
       )
       RETURNING id
     `;
 
-const saveMxMovieQuery = `
-      INSERT INTO movies_mx (
-        title,
-        title_es,
-        year,
-        poster,
-        language,
-        quality,
-        description,
-        telegram_file_id,
-        telegram_poster_id,
-        telegram_container_group_id,
-        catalog
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-      )
-      RETURNING id
-    `;
 export type Movie = z.infer<typeof MovieSchema>;
 
 const TelegramMovieSchema = z.object({
@@ -70,4 +58,4 @@ const TelegramMovieSchema = z.object({
 
 export type TelegramMovie = z.infer<typeof TelegramMovieSchema>;
 
-export { MovieSchema, saveEsMovieQuery, saveMxMovieQuery };
+export { MovieSchema, saveMovieQuery };
