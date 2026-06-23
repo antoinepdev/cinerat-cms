@@ -16,10 +16,12 @@ const MovieSchema = z.object({
 });
 
 export interface MovieWithoutCriticalData {
-  title: string
-  title_es: string[]
+  title_en: string
+  title_cas?: string
+  title_lat?: string
   year: number
-  language: ('español latino 🇲🇽' | 'español castellano 🇪🇸')[]
+  language_cas?: boolean
+  language_lat?: boolean
   poster: string
   description: string
   catalog: string
