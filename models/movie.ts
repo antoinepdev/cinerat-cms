@@ -12,7 +12,8 @@ const MovieSchema = z.object({
   description: z.string(),
   telegram_file_id_cas: z.number().int().optional(),
   telegram_file_id_lat: z.number().int().optional(),
-  catalog: z.string(),
+  catalog_name: z.string(),
+  catalog_version: z.number().int().positive()
 });
 
 export interface MovieWithoutCriticalData {
@@ -41,10 +42,11 @@ const saveMovieQuery = `
         telegram_file_id_cas,
         telegram_file_id_lat,
         telegram_poster_id,
-        catalog,
+        catalog_name,
+        catalog_version,
         telegram_container_group_id
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
       )
       RETURNING id
     `;

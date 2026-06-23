@@ -7,12 +7,12 @@ import { groupContainerId } from "../../bot/config.ts"
 
 export async function saveMovie(req: Request, res: Response) {
   const body: Movie = req.body
-  const {title_en, title_cas, title_lat,  year, description, poster, quality, catalog, language_cas, language_lat} = body
+  const {title_en, title_cas, title_lat,  year, description, poster, quality, catalog_name, catalog_version, language_cas, language_lat} = body
   let {telegram_file_id_cas, telegram_file_id_lat} = body
 
   if (!language_cas && !language_lat) return res.status(400).json({ error: 'Necesitas especificar al menos un idioma' })
   if (!telegram_file_id_cas && !telegram_file_id_lat) return res.status(400).json({ error: 'Necesitas enviar al menos un file_id' })
-  
+
   const allTitles = [title_en, title_cas, title_lat]
   let availableTitles: string[] = []
   allTitles.forEach(title => {if (title) return availableTitles.push(title)})
@@ -26,7 +26,7 @@ export async function saveMovie(req: Request, res: Response) {
       const movieCaption = `${availableTitles.join(' | ')}\n${year}\n${description}\n"español castellano 🇪🇸"`
       telegram_file_id_cas = await sendMovieToGroupContainer(telegram_file_id_cas, movieCaption)
     }
-    
+
     if (telegram_file_id_lat) {
       const movieCaption = `${availableTitles.join(' | ')}\n${year}\n${description}\n"español latino 🇲🇽"`
       telegram_file_id_lat = await sendMovieToGroupContainer(telegram_file_id_lat, movieCaption)
@@ -49,7 +49,8 @@ export async function saveMovie(req: Request, res: Response) {
     telegram_file_id_cas: telegram_file_id_cas || null,
     telegram_file_id_lat: telegram_file_id_lat || null,
     telegramPosterId,
-    catalog,
+    catalog_name,
+    catalog_version,
     groupContainerId,
   }
 
@@ -63,7 +64,7 @@ export async function saveMovie(req: Request, res: Response) {
     } catch (error) {
       console.error('Error al actualizar la telegram_movies con poster: ' + poster + ' error: ' + error)
     }
-    
+
     return res.status(201).json({
       id: insertedId,
       ...movie,
