@@ -63,8 +63,8 @@ export type Movie = z.infer<typeof MovieSchema>;
 
 const TelegramMovieSchema = z.object({
   fileId: z.number().int().positive(),
-  text: z.string(),
-  language: z.enum(["español latino 🇲🇽", "español castellano 🇪🇸"]),
+  messageText: z.string(),
+  language: z.enum(["latino", "castellano"]),
   is_saved: z.boolean(),
 });
 
