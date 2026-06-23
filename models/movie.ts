@@ -25,7 +25,8 @@ export interface MovieWithoutCriticalData {
   language_lat?: boolean
   poster: string
   description: string
-  catalog: string
+  catalog_name: string
+  catalog_version: number
 }
 
 const saveMovieQuery = `
