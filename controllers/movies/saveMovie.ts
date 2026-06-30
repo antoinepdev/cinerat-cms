@@ -1,5 +1,5 @@
 import type { Response, Request } from "express"
-import { saveEsMovieQuery, saveMxMovieQuery, type Movie } from "../../models/movie.ts"
+import { saveMovieQuery, type Movie } from "../../models/movie.ts"
 import { pool } from "../../database.ts"
 import { sendPosterToGroupContainer } from "../../bot/helpers/sendPosterToGroupContainer.ts"
 import { sendMovieToGroupContainer } from "../../bot/helpers/sendMovieToGroupContainer.ts"
@@ -7,44 +7,71 @@ import { groupContainerId } from "../../bot/config.ts"
 
 export async function saveMovie(req: Request, res: Response) {
   const body: Movie = req.body
+  const {title_en, title_cas, title_lat,  year, description, poster, quality, catalog_name, catalog_version, language_cas, language_lat} = body
+  let {telegram_file_id_cas, telegram_file_id_lat} = body
 
-  const posterCaption = `${body.title} | ${body.title_es.join(' | ')}\n${body.year}\n\n${body.description}`
-  const telegramPosterId: number | null = await sendPosterToGroupContainer(body.poster, posterCaption)
+  if (!language_cas && !language_lat) return res.status(400).json({ error: 'Necesitas especificar al menos un idioma' })
+  if (!telegram_file_id_cas && !telegram_file_id_lat) return res.status(400).json({ error: 'Necesitas enviar al menos un file_id' })
+
+  const allTitles = [title_en, title_cas, title_lat]
+  let availableTitles: string[] = []
+  allTitles.forEach(title => {if (title) return availableTitles.push(title)})
+
+  const posterCaption = `${availableTitles.join(' | ')}\n${year}\n\n${description}`
+  const telegramPosterId: number | null = await sendPosterToGroupContainer(poster, posterCaption)
   if (!telegramPosterId) return res.status(400).json({ error: 'Ha ocurrido un error al enviar el poster al grupo contenedor' })
-  const movie = { ...body, telegramPosterId }
 
-  const movieCaption = `${movie.title} | ${(movie.title_es).join(' | ')}\n${movie.year}\n${movie.language}`
-  const telegramFileId: number | null = await sendMovieToGroupContainer(movie.telegramFileId, movieCaption)
-  const oldTelegramFileId = movie.telegramFileId
-
-  if (!telegramFileId) return res.status(400).json({ error: 'Ha ocurrido un error al enviar la peli al grupo contenedor' })
-  movie.telegramFileId = telegramFileId
+  const old_telegram_file_id_cas = telegram_file_id_cas
+  const old_telegram_file_id_lat = telegram_file_id_lat
 
   try {
-    const values = [
-      movie.title,
-      movie.title_es,
-      movie.year,
-      movie.poster,
-      movie.language,
-      movie.quality,
-      movie.description,
-      movie.telegramFileId,
-      movie.telegramPosterId,
-      groupContainerId,
-      movie.catalog
-    ];
+    if (telegram_file_id_cas) {
+      const movieCaption = `${availableTitles.join(' | ')}\n${year}\n${description}\n"español castellano 🇪🇸"`
+      telegram_file_id_cas = await sendMovieToGroupContainer(telegram_file_id_cas, movieCaption)
+    }
 
-    const result = movie.language === 'español latino 🇲🇽' ? await pool.query(saveMxMovieQuery, values) : await pool.query(saveEsMovieQuery, values)
+    if (telegram_file_id_lat) {
+      const movieCaption = `${availableTitles.join(' | ')}\n${year}\n${description}\n"español latino 🇲🇽"`
+      telegram_file_id_lat = await sendMovieToGroupContainer(telegram_file_id_lat, movieCaption)
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(400).json({ error: 'Ha ocurrido un error al enviar la peli al grupo contenedor' })
+  }
+
+  const movie = {
+    title_en,
+    title_cas: title_cas || null,
+    title_lat: title_lat || null,
+    year,
+    poster,
+    language_cas: language_cas || null,
+    language_lat: language_lat || null,
+    quality: quality || null,
+    description,
+    telegram_file_id_cas: telegram_file_id_cas || null,
+    telegram_file_id_lat: telegram_file_id_lat || null,
+    telegramPosterId,
+    catalog_name,
+    catalog_version,
+    groupContainerId,
+  }
+
+  try {
+    const values = Object.values(movie)
+    const result = await pool.query(saveMovieQuery, values)
     const insertedId = result.rows[0].id
 
     try {
-      movie.language === 'español latino 🇲🇽' ?
-        await pool.query('UPDATE raw_movies_mx SET is_saved = true WHERE file_id = $1', [oldTelegramFileId])
-        :
-        await pool.query('UPDATE raw_movies_es SET is_saved = true WHERE file_id = $1', [oldTelegramFileId])
-    } catch (error) {
+      const file_ids: number[] = []
+      if (old_telegram_file_id_cas) file_ids.push(old_telegram_file_id_cas)
+      if (old_telegram_file_id_lat) file_ids.push(old_telegram_file_id_lat)
 
+      file_ids.forEach(async file_id => {
+        await pool.query('UPDATE telegram_movies SET is_saved = true WHERE file_id = $1', [file_id])
+      })
+    } catch (error) {
+      console.error('Error al actualizar la telegram_movies con poster: ' + poster + ' error: ' + error)
     }
 
     return res.status(201).json({
