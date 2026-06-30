@@ -20,7 +20,7 @@
     "zod": "^4.3.6"
   },
   "scripts": {
-    "dev": "node --watch --env-file .dev.env index.ts",
-    "prod": "node --env-file .env index.ts"
+    "dev": "node --watch --env-file .dev.env ./src/index.ts",
+    "prod": "node --env-file .env ./src/index.ts"
   }
 }

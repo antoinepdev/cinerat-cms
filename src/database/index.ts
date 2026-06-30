@@ -8,6 +8,4 @@ const pool = new Pool({
   password: process.env.DATABASE_PASSWORD,
 })
 
-console.log('Database ready...')
-
 export { pool }

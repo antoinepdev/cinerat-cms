@@ -1,6 +1,5 @@
 import { app } from "./server.ts"
-import './bot/saveTelegramMovies.ts'
-import './database.ts'
+// import './bot/saveTelegramMovies.ts'
 
 const port = app.get('port')
 app.listen(port, (_) => console.log(`Server listen on port ${port}`))
