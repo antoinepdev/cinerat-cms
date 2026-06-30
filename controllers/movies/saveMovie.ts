@@ -10,9 +10,6 @@ export async function saveMovie(req: Request, res: Response) {
   const {title_en, title_cas, title_lat,  year, description, poster, quality, catalog_name, catalog_version, language_cas, language_lat} = body
   let {telegram_file_id_cas, telegram_file_id_lat} = body
 
-  if (!language_cas && !language_lat) return res.status(400).json({ error: 'Necesitas especificar al menos un idioma' })
-  if (!telegram_file_id_cas && !telegram_file_id_lat) return res.status(400).json({ error: 'Necesitas enviar al menos un file_id' })
-
   const allTitles = [title_en, title_cas, title_lat]
   let availableTitles: string[] = []
   allTitles.forEach(title => {if (title) return availableTitles.push(title)})
