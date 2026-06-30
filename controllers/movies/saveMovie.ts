@@ -21,6 +21,9 @@ export async function saveMovie(req: Request, res: Response) {
   const telegramPosterId: number | null = await sendPosterToGroupContainer(poster, posterCaption)
   if (!telegramPosterId) return res.status(400).json({ error: 'Ha ocurrido un error al enviar el poster al grupo contenedor' })
 
+  const old_telegram_file_id_cas = telegram_file_id_cas
+  const old_telegram_file_id_lat = telegram_file_id_lat
+
   try {
     if (telegram_file_id_cas) {
       const movieCaption = `${availableTitles.join(' | ')}\n${year}\n${description}\n"español castellano 🇪🇸"`
@@ -60,7 +63,13 @@ export async function saveMovie(req: Request, res: Response) {
     const insertedId = result.rows[0].id
 
     try {
-      await pool.query('UPDATE telegram_movies SET is_saved = true WHERE poster = $1', [poster])
+      const file_ids: number[] = []
+      if (old_telegram_file_id_cas) file_ids.push(old_telegram_file_id_cas)
+      if (old_telegram_file_id_lat) file_ids.push(old_telegram_file_id_lat)
+
+      file_ids.forEach(async file_id => {
+        await pool.query('UPDATE telegram_movies SET is_saved = true WHERE file_id = $1', [file_id])
+      })
     } catch (error) {
       console.error('Error al actualizar la telegram_movies con poster: ' + poster + ' error: ' + error)
     }
