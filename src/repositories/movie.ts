@@ -1,5 +1,5 @@
 import { pool } from "../database/index.ts"
-import type { ITelegramMovie } from "../entities/movie.ts"
+import type { IMovie, ITelegramMovie } from "../entities/movie.ts"
 
 async function getTelegramMovies (): Promise<ITelegramMovie[]> {
   const query = 'SELECT * FROM telegram_movies'
@@ -7,8 +7,15 @@ async function getTelegramMovies (): Promise<ITelegramMovie[]> {
   return result.rows
 }
 
+async function getMovies (): Promise<IMovie[]> {
+  const query = 'SELECT * FROM movies'
+  const result = await pool.query(query)
+  return result.rows
+}
+
 const movieRepository = {
-  getTelegramMovies
+  getTelegramMovies,
+  getMovies,
 }
 
 export { movieRepository }
