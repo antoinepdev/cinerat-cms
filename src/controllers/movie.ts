@@ -1,6 +1,7 @@
-import type { Response, Request } from 'express'
+import type { Response, Request, NextFunction } from 'express'
 import { getTelegramMovies } from '../services/movies/getTelegramMovies.ts'
 import { getMovies } from '../services/movies/getMovies.ts'
+import { saveMovie } from '../services/movies/saveMovie.ts'
 
 async function getTelegramMovieHandler (_: Request, res: Response) {
   try {
@@ -23,9 +24,19 @@ async function getMoviesHandler (_: Request, res: Response) {
     return res.status(500).json({error: error.message})
   }}
 
+async function saveMovieHandler (req: Request, res: Response, next: NextFunction) {
+  try {
+    const movie = await saveMovie(req.body)
+    return res.status(201).json(movie)
+  }
+  catch (error) {
+    next(error)
+  }}
+
 const movieController = {
   getTelegramMovieHandler,
   getMoviesHandler,
+  saveMovieHandler,
 }
 
 export { movieController }

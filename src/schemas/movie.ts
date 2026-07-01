@@ -14,7 +14,7 @@ const MovieSchema = z.object({
   telegram_file_id_lat: z.number().int().optional(),
   catalog_name: z.string(),
   catalog_version: z.number().int().positive()
-})
+}).strip()
 
 const TelegramMovieSchema = z.object({
   file_id: z.number().int().positive(),
@@ -25,3 +25,4 @@ const TelegramMovieSchema = z.object({
 
 export type IMovieInput = z.infer<typeof MovieSchema>
 export type ITelegramMovieInput = z.infer<typeof TelegramMovieSchema>;
+export { MovieSchema }
