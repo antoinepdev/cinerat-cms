@@ -23,6 +23,15 @@ const TelegramMovieSchema = z.object({
   is_saved: z.boolean(),
 })
 
+const MovieFiltersSchema = z.object({
+  catalog_name: z.string().optional(),
+  catalog_version: z.number().int().optional(),
+  year: z.coerce.number().int().positive().optional(),
+  sort_by: z.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id']).optional(),
+}).strip()
+
 export type IMovieInput = z.infer<typeof MovieSchema>
 export type ITelegramMovieInput = z.infer<typeof TelegramMovieSchema>;
-export { MovieSchema }
+export type IMovieFilters = z.infer<typeof MovieFiltersSchema>
+
+export { MovieSchema, MovieFiltersSchema }

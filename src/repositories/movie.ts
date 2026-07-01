@@ -1,5 +1,6 @@
 import { pool } from "../database/index.ts"
 import type { IMovie, IMovieToSave, ITelegramMovie } from "../entities/movie.ts"
+import type { IMovieFilters } from "../schemas/movie.ts"
 
 async function getTelegramMovies (): Promise<ITelegramMovie[]> {
   const query = 'SELECT * FROM telegram_movies'
@@ -7,9 +8,35 @@ async function getTelegramMovies (): Promise<ITelegramMovie[]> {
   return result.rows
 }
 
-async function getMovies (): Promise<IMovie[]> {
-  const query = 'SELECT * FROM movies'
-  const result = await pool.query(query)
+async function getMovies (filters: IMovieFilters): Promise<IMovie[]> {
+  const baseQuery = 'SELECT * FROM movies'
+  let queryFilters: string = ''
+  const values = []
+  if (filters) {
+    if (filters.catalog_name) {
+      queryFilters += ` where catalog_name = $${values.length + 1}`
+      values.push(filters.catalog_name)
+      if (filters.catalog_version) {
+        queryFilters += `and catalog_version = $${values.length + 1}`
+        values.push(filters.catalog_version)
+      }
+    }
+    if (filters.year) {
+      if (values.length === 0) {
+        queryFilters = ` where year = $${values.length + 1}`
+        values.push(filters.year)
+      }
+      else {
+        queryFilters += `and year = $${values.length + 1}`
+        values.push(filters.year)
+      }
+    }
+    if (filters.sort_by) queryFilters += `order by ${filters.sort_by}`
+  }
+
+  const queryWithFilters = baseQuery + queryFilters
+
+  const result = await pool.query(queryWithFilters, values)
   return result.rows
 }
 
