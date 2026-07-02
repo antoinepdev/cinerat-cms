@@ -20,21 +20,4 @@ const bot = new TelegramBot(BOT_TOKEN, {
 
 bot.on("polling_error", (_) => { })
 
-async function sendPoster (posterUrl: string, posterCaption: string): Promise<number> {
-    const sendedPoster = await bot.sendPhoto(MOVIE_CONTAINER_GROUP_ID, posterUrl, { caption: posterCaption })
-    const telegramPosterId = sendedPoster.message_id
-    return telegramPosterId
-}
-
-
-async function sendMovie(fileId: number, movieCaption: string): Promise<number> {
-    const sendedMovie = await bot.copyMessage(MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID, fileId, { caption: movieCaption })
-    return sendedMovie.message_id
-}
-
-const telegramProvider = {
-  sendPoster,
-  sendMovie
-}
-
-export { telegramProvider }
+export { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID }
