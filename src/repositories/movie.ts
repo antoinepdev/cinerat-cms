@@ -1,9 +1,10 @@
+import { Result } from "pg"
 import { pool } from "../database/index.ts"
 import type { IMovie, IMovieToSave, ITelegramMovie } from "../entities/movie.ts"
-import type { IMovieFilters } from "../schemas/movie.ts"
+import type { IMovieFilters, ITelegramMovieInput } from "../schemas/movie.ts"
 
 async function getTelegramMovies (): Promise<ITelegramMovie[]> {
-  const query = 'SELECT * FROM telegram_movies'
+  const query = 'SELECT * FROM telegram_movies WHERE is_saved = false'
   const result = await pool.query(query)
   return result.rows
 }
@@ -52,11 +53,19 @@ async function updateTelegramMovie (file_id: number) {
   return result.rows[0]
 }
 
+async function saveTelegramMovie (data: ITelegramMovieInput) : Promise<ITelegramMovieInput> {
+  const query = 'INSERT INTO telegram_movies (file_id, message_text, language, is_saved) Values ($1, $2, $3, $4)'
+  const values = [data.file_id, data.message_text, data.language, data.is_saved]
+  const result = await pool.query(query, values)
+  return result.rows[0]
+}
+
 const movieRepository = {
   getTelegramMovies,
   getMovies,
   saveMovie,
   updateTelegramMovie,
+  saveTelegramMovie,
 }
 
 export { movieRepository }
