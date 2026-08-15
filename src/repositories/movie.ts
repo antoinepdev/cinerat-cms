@@ -10,7 +10,7 @@ async function getTelegramMovies (): Promise<ITelegramMovie[]> {
 }
 
 async function getMovies (filters: IMovieFilters): Promise<IMovie[]> {
-  const baseQuery = 'SELECT * FROM movies'
+  const baseQuery = 'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description from movies'
   let queryFilters: string = ''
   const values = []
   if (filters) {
