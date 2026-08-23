@@ -1,4 +1,4 @@
-import { app } from "./server.ts"
+import { app } from './server.ts'
 import './listeners/telegramMovies.ts'
 
 const port = app.get('port')

@@ -1,11 +1,9 @@
-import type { IMovieFilters } from "../schemas/movie.ts"
+import type { IMovieFilters } from '../schemas/movie.ts'
 
 declare global {
-  namespace Express {
-    interface Request {
-      filteredQuery: IMovieFilters
-    }
-  }
+	namespace Express {
+		interface Request {
+			filteredQuery: IMovieFilters
+		}
+	}
 }
-
-export {}

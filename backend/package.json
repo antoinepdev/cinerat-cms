@@ -1,27 +1,27 @@
 {
-  "name": "backend",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@biomejs/biome": "2.5.10",
-    "@types/bun": "latest",
-    "@types/express": "^5.0.6",
-    "@types/pg": "^8.20.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "dependencies": {
-    "@types/node-telegram-bot-api": "^0.64.14",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "node-telegram-bot-api": "^0.67.0",
-    "pg": "^8.20.0",
-    "zod": "^4.3.6"
-  },
-  "scripts": {
-    "dev": "node --watch --env-file .dev.env ./src/index.ts",
-    "prod": "node --env-file .env ./src/index.ts"
-  }
+	"name": "backend",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@biomejs/biome": "2.5.10",
+		"@types/bun": "latest",
+		"@types/express": "^5.0.6",
+		"@types/pg": "^8.20.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"dependencies": {
+		"@types/node-telegram-bot-api": "^0.64.14",
+		"cors": "^2.8.6",
+		"express": "^5.2.1",
+		"node-telegram-bot-api": "^0.67.0",
+		"pg": "^8.20.0",
+		"zod": "^4.3.6"
+	},
+	"scripts": {
+		"dev": "node --watch --env-file .dev.env ./src/index.ts",
+		"prod": "node --env-file .env ./src/index.ts"
+	}
 }

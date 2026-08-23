@@ -1,9 +1,9 @@
 export function toPascalCase(text: string): string {
-  return text
-    .split(' ')
-    .map(word => {
-      // Maneja correctamente caracteres como 'á', 'ñ', etc.
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    })
-    .join(' ')
+	return text
+		.split(' ')
+		.map((word) => {
+			// Maneja correctamente caracteres como 'á', 'ñ', etc.
+			return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+		})
+		.join(' ')
 }
