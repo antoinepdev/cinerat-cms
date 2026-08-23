@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@biomejs/biome": "2.5.10",
     "@types/bun": "latest",
     "@types/express": "^5.0.6",
     "@types/pg": "^8.20.0"
