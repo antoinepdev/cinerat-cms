@@ -1,11 +1,9 @@
 import type { Response, Request, NextFunction } from 'express'
-import { getTelegramMovies } from '../services/movies/getTelegramMovies.ts'
-import { getMovies } from '../services/movies/getMovies.ts'
-import { saveMovie } from '../services/movies/saveMovie.ts'
+import { movieService } from '../services/movies.ts'
 
 async function getTelegramMovieHandler (_: Request, res: Response) {
   try {
-    const telegramMovies = await getTelegramMovies()
+    const telegramMovies = await movieService.getTelegramMovies()
     return res.status(200).json(telegramMovies)
   }
   catch (error) {
@@ -17,7 +15,7 @@ async function getTelegramMovieHandler (_: Request, res: Response) {
 async function getMoviesHandler (req: Request, res: Response) {
   try {
     const filters = req.filteredQuery
-    const movies = await getMovies(filters)
+    const movies = await movieService.getMovies(filters)
     return res.status(200).json(movies)
   }
   catch (error) {
@@ -26,7 +24,7 @@ async function getMoviesHandler (req: Request, res: Response) {
 
 async function saveMovieHandler (req: Request, res: Response, next: NextFunction) {
   try {
-    const movie = await saveMovie(req.body)
+    const movie = await movieService.saveMovie(req.body)
     return res.status(201).json(movie)
   }
   catch (error) {
