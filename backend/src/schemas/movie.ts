@@ -44,8 +44,19 @@ const MovieFiltersSchema = z
 	})
 	.strip()
 
+const MovieToUpdateParamsSchema = z
+	.object({
+		poster: z.string().startsWith('https://'),
+		language_cas: z.boolean().optional(),
+		language_lat: z.boolean().optional(),
+		telegram_file_id_cas: z.number().int().optional(),
+		telegram_file_id_lat: z.number().int().optional(),
+	})
+	.strip()
+
 export type IMovieInput = z.infer<typeof MovieSchema>
 export type ITelegramMovieInput = z.infer<typeof TelegramMovieSchema>
 export type IMovieFilters = z.infer<typeof MovieFiltersSchema>
+export type IMovieToUpdateParams = z.infer<typeof MovieToUpdateParamsSchema>
 
-export { MovieFiltersSchema, MovieSchema, TelegramFileSchema }
+export { MovieFiltersSchema, MovieSchema, MovieToUpdateParamsSchema, TelegramFileSchema }
