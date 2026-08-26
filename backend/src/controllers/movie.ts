@@ -30,10 +30,20 @@ async function saveMovieHandler(req: Request, res: Response, next: NextFunction)
 	}
 }
 
+async function updateMovieHandler(req: Request, res: Response, next: NextFunction) {
+	try {
+		const updatedMovie = await movieService.updateMovie(req.body)
+		return res.status(201).json(updatedMovie)
+	} catch (error) {
+		next(error)
+	}
+}
+
 const movieController = {
 	getTelegramMovieHandler,
 	getMoviesHandler,
 	saveMovieHandler,
+	updateMovieHandler,
 }
 
 export { movieController }
