@@ -37,8 +37,8 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
 		const updatedMovie = await movieRepository.updateMovie(data)
 		return updatedMovie
 	} catch (error) {
-		console.log(error)
 		if (error instanceof Error && error.message === 'Movie not found') throw error
+		console.log(error)
 		throw new Error('Internal server error')
 	}
 }
