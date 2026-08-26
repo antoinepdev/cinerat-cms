@@ -12,8 +12,6 @@ export async function validateUpdateMovieBody(req: Request, res: Response, next:
 	const body: IMovieToUpdateParams = req.body
 
 	const hasFieldsToUpdate =
-		body.language_cas !== undefined ||
-		body.language_lat !== undefined ||
 		body.telegram_file_id_cas !== undefined ||
 		body.telegram_file_id_lat !== undefined
 

@@ -64,21 +64,22 @@ async function saveMovie(data: IMovieToSave): Promise<IMovie> {
 }
 
 async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
-	const candidates: [string, unknown][] = [
-		['language_cas', data.language_cas],
-		['language_lat', data.language_lat],
-		['telegram_file_id_cas', data.telegram_file_id_cas],
-		['telegram_file_id_lat', data.telegram_file_id_lat],
-	]
 	const values: unknown[] = []
 	const setClauses: string[] = []
 
-	for (const [key, value] of candidates) {
-		if (value === undefined) continue
-
-		values.push(value)
-		setClauses.push(`${key} = $${values.length}`)
+	if (data.telegram_file_id_cas !== undefined) {
+		values.push(data.telegram_file_id_cas)
+		setClauses.push(`telegram_file_id_cas = $${values.length}`)
+		values.push(true)
+		setClauses.push(`language_cas = $${values.length}`)
 	}
+	if (data.telegram_file_id_lat !== undefined) {
+		values.push(data.telegram_file_id_lat)
+		setClauses.push(`telegram_file_id_lat = $${values.length}`)
+		values.push(true)
+		setClauses.push(`language_lat = $${values.length}`)
+	}
+
 	values.push(data.poster)
 
 	const result = await pool.query(
