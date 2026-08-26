@@ -1,7 +1,7 @@
 import { Result } from 'pg'
 import { pool } from '../database/index.ts'
 import type { IMovie, IMovieToSave, ITelegramMovie } from '../entities/movie.ts'
-import type { IMovieFilters, ITelegramMovieInput } from '../schemas/movie.ts'
+import type { IMovieFilters, IMovieToUpdateParams, ITelegramMovieInput } from '../schemas/movie.ts'
 
 async function getTelegramMovies(): Promise<ITelegramMovie[]> {
 	const query = 'SELECT * FROM telegram_movies WHERE is_saved = false'
@@ -63,6 +63,35 @@ async function saveMovie(data: IMovieToSave): Promise<IMovie> {
 	return result.rows[0]
 }
 
+async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
+	const values: unknown[] = []
+	const setClauses: string[] = []
+
+	if (data.telegram_file_id_cas !== undefined) {
+		values.push(data.telegram_file_id_cas)
+		setClauses.push(`telegram_file_id_cas = $${values.length}`)
+		values.push(true)
+		setClauses.push(`language_cas = $${values.length}`)
+	}
+	if (data.telegram_file_id_lat !== undefined) {
+		values.push(data.telegram_file_id_lat)
+		setClauses.push(`telegram_file_id_lat = $${values.length}`)
+		values.push(true)
+		setClauses.push(`language_lat = $${values.length}`)
+	}
+
+	values.push(data.poster)
+
+	const result = await pool.query(
+		`UPDATE movies SET ${setClauses.join(', ')} WHERE poster = $${values.length} RETURNING *`,
+		values,
+	)
+
+	if (result.rows.length === 0) throw new Error('Movie not found')
+
+	return result.rows[0]
+}
+
 async function updateTelegramMovie(file_id: number) {
 	const result = await pool.query('UPDATE telegram_movies SET is_saved = true WHERE file_id = $1 RETURNING *', [file_id])
 	return result.rows[0]
@@ -81,6 +110,7 @@ const movieRepository = {
 	saveMovie,
 	updateTelegramMovie,
 	saveTelegramMovie,
+	updateMovie,
 }
 
 export { movieRepository }

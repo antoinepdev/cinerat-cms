@@ -9,6 +9,10 @@ export async function errorHandler(error: any, _: Request, res: Response, __: Ne
 		}
 	}
 
+	if (error.message === 'Movie not found') {
+		return res.status(404).json({ error: 'Movie not found' })
+	}
+
 	console.log(error.code, error.message)
 	return res.status(500).json({ error: 'Server internal error' })
 }
