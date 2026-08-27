@@ -11,7 +11,7 @@ async function getTelegramMovies(): Promise<ITelegramMovie[]> {
 
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
-		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description from movies'
+		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres from movies'
 	let queryFilters: string = ''
 	const values = []
 	if (filters) {
@@ -42,7 +42,7 @@ async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 }
 
 async function saveMovie(data: IMovieToSave): Promise<IMovie> {
-	const query = ` INSERT INTO movies ( title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version `
+	const query = ` INSERT INTO movies ( title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres `
 	const values = [
 		data.title_en,
 		data.title_cas,
@@ -58,6 +58,10 @@ async function saveMovie(data: IMovieToSave): Promise<IMovie> {
 		data.telegram_poster_id,
 		data.catalog_name,
 		data.catalog_version,
+		data.tmdb_id,
+		data.popularity,
+		data.backdrop_path,
+		data.genres,
 	]
 	const result = await pool.query(query, values)
 	return result.rows[0]
