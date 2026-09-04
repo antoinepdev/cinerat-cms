@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { NotFoundError } from '../utils/errors.ts'
 
-export async function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
+export function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
 	if (error instanceof Error) {
 		if (error instanceof NotFoundError) return res.status(error.statusCode).json({ error: error.message })
 
