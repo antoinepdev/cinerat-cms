@@ -10,13 +10,13 @@ async function getTelegramMovieHandler(_: Request, res: Response, next: NextFunc
 	}
 }
 
-async function getMoviesHandler(req: Request, res: Response) {
+async function getMoviesHandler(req: Request, res: Response, next: NextFunction) {
 	try {
 		const filters = req.filteredQuery
 		const movies = await movieService.getMovies(filters)
 		return res.status(200).json(movies)
 	} catch (error) {
-		return res.status(500).json({ error: error.message })
+		next(error)
 	}
 }
 

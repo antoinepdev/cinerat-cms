@@ -4,13 +4,8 @@ import type { IMovieFilters, IMovieInput, IMovieToUpdateParams } from '../schema
 import { telegramService } from './telegram.ts'
 
 async function getMovies(filters: IMovieFilters) {
-	try {
-		const movies = await movieRepository.getMovies(filters)
-		return movies
-	} catch (error) {
-		console.log(error)
-		throw new Error('Internal server error')
-	}
+	const movies = await movieRepository.getMovies(filters)
+	return movies
 }
 
 async function getTelegramMovies() {
