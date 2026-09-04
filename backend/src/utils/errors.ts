@@ -6,3 +6,9 @@ export class AppError extends Error {
 		this.statusCode = statusCode
 	}
 }
+
+export class NotFoundError extends AppError {
+	constructor(message: string = 'Movie not found') {
+		super(message, 404)
+	}
+}
