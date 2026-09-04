@@ -1,13 +1,12 @@
 import type { NextFunction, Request, Response } from 'express'
 import { movieService } from '../services/movies.ts'
 
-async function getTelegramMovieHandler(_: Request, res: Response) {
+async function getTelegramMovieHandler(_: Request, res: Response, next: NextFunction) {
 	try {
 		const telegramMovies = await movieService.getTelegramMovies()
 		return res.status(200).json(telegramMovies)
 	} catch (error) {
-		console.log(error)
-		return res.status(500).json({ error: error.message })
+		next(error)
 	}
 }
 

@@ -14,12 +14,8 @@ async function getMovies(filters: IMovieFilters) {
 }
 
 async function getTelegramMovies() {
-	try {
-		const telegramMovies = await movieRepository.getTelegramMovies()
-		return telegramMovies
-	} catch (error) {
-		throw new Error('Internal server error')
-	}
+	const telegramMovies = await movieRepository.getTelegramMovies()
+	return telegramMovies
 }
 
 async function saveMovie(movie: IMovieInput): Promise<IMovie> {
