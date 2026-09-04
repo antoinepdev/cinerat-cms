@@ -1,5 +1,6 @@
 import cors from 'cors'
 import Express from 'express'
+import { errorHandler } from './middlewares/errorHandler.ts'
 import { moviesRouter } from './routes/movies.ts'
 
 const app = Express()
@@ -11,5 +12,7 @@ app.use(cors())
 
 // routes
 app.use('/movies', moviesRouter)
+
+app.use(errorHandler)
 
 export { app }
