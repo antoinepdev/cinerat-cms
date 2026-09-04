@@ -1,6 +1,7 @@
 import type { IMovie, IMovieToSave } from '../entities/movie.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import type { IMovieFilters, IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
+import { NotFoundError } from '../utils/errors.ts'
 import { telegramService } from './telegram.ts'
 
 async function getMovies(filters: IMovieFilters) {
@@ -25,7 +26,7 @@ async function saveMovie(movie: IMovieInput): Promise<IMovie> {
 
 async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
 	const updatedMovie = await movieRepository.updateMovie(data)
-	if (!updatedMovie) throw new Error('Movie not found')
+	if (!updatedMovie) throw new NotFoundError()
 	return updatedMovie
 }
 
