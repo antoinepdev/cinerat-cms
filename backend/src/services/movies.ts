@@ -1,25 +1,17 @@
 import type { IMovie, IMovieToSave } from '../entities/movie.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import type { IMovieFilters, IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
+import { NotFoundError } from '../utils/errors.ts'
 import { telegramService } from './telegram.ts'
 
 async function getMovies(filters: IMovieFilters) {
-	try {
-		const movies = await movieRepository.getMovies(filters)
-		return movies
-	} catch (error) {
-		console.log(error)
-		throw new Error('Internal server error')
-	}
+	const movies = await movieRepository.getMovies(filters)
+	return movies
 }
 
 async function getTelegramMovies() {
-	try {
-		const telegramMovies = await movieRepository.getTelegramMovies()
-		return telegramMovies
-	} catch (error) {
-		throw new Error('Internal server error')
-	}
+	const telegramMovies = await movieRepository.getTelegramMovies()
+	return telegramMovies
 }
 
 async function saveMovie(movie: IMovieInput): Promise<IMovie> {
@@ -33,14 +25,9 @@ async function saveMovie(movie: IMovieInput): Promise<IMovie> {
 }
 
 async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
-	try {
-		const updatedMovie = await movieRepository.updateMovie(data)
-		return updatedMovie
-	} catch (error) {
-		if (error instanceof Error && error.message === 'Movie not found') throw error
-		console.log(error)
-		throw new Error('Internal server error')
-	}
+	const updatedMovie = await movieRepository.updateMovie(data)
+	if (!updatedMovie) throw new NotFoundError()
+	return updatedMovie
 }
 
 export const movieService = {

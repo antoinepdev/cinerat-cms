@@ -67,7 +67,7 @@ async function saveMovie(data: IMovieToSave): Promise<IMovie> {
 	return result.rows[0]
 }
 
-async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
+async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie | undefined> {
 	const values: unknown[] = []
 	const setClauses: string[] = []
 
@@ -90,9 +90,6 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
 		`UPDATE movies SET ${setClauses.join(', ')} WHERE poster = $${values.length} RETURNING *`,
 		values,
 	)
-
-	if (result.rows.length === 0) throw new Error('Movie not found')
-
 	return result.rows[0]
 }
 

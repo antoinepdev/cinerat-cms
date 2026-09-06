@@ -4,6 +4,7 @@ import { getPosterCaption } from '../helpers/getPosterCaption.ts'
 import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import type { IMovieInput } from '../schemas/movie.ts'
+import { NotFoundError } from '../utils/errors.ts'
 
 async function saveMovie(data: IMovieInput): Promise<IMovieToSave> {
 	const posterCaption = await getPosterCaption(data)
@@ -37,7 +38,7 @@ async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
 	for (const fi of telegram_file_ids) {
 		if (fi) {
 			const updatedTelegramMovie = await movieRepository.updateTelegramMovie(fi)
-			if (!updatedTelegramMovie) throw new Error(`Failed telegram movie is_saved property update.File id ${fi} not found`)
+			if (!updatedTelegramMovie) throw new NotFoundError('Telegram movie not found')
 		}
 	}
 }
