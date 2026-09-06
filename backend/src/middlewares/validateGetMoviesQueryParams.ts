@@ -5,7 +5,7 @@ import { ValidationError } from '../utils/errors.ts'
 export async function validateGetMoviesQueryParams(req: Request, _res: Response, next: NextFunction) {
 	const result = MovieFiltersSchema.safeParse(req.query)
 
-	if (!result.success) throw new ValidationError('Invalidated query params')
+	if (!result.success) throw new ValidationError('Invalid query params')
 
 	req.filteredQuery = result.data
 	const query = req.filteredQuery
