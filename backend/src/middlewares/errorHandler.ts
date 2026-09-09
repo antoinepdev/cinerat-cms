@@ -3,8 +3,8 @@ import { NotFoundError, ValidationError } from '../utils/errors.ts'
 
 export function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
 	if (error instanceof Error) {
-		if (error instanceof NotFoundError) return res.status(error.statusCode).json({ error: error.message })
-		if (error instanceof ValidationError) return res.status(error.statusCode).json({ error: error.message })
+		if (error instanceof NotFoundError) return res.status(error.status).json({ error: error.message })
+		if (error instanceof ValidationError) return res.status(error.status).json({ error: error.message })
 
 		// telegram errors
 		if (error.message.includes('wrong type of the web page content')) {
