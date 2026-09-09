@@ -1,15 +1,23 @@
 import type { NextFunction, Request, Response } from 'express'
 import { buildProblemDetailsError } from '../helpers/buildProblemDetailsError.ts'
-import { NotFoundError, ValidationError } from '../utils/errors.ts'
+import { type IFieldError, NotFoundError, ValidationError } from '../utils/errors.ts'
 
-function sendErrorResponse({ res, message, status }: { res: Response; message: string; status: number }) {
-	return res.status(status).json(buildProblemDetailsError({ message, status }))
+interface IProps {
+	res: Response
+	message: string
+	status: number
+	errors?: IFieldError[]
+}
+
+function sendErrorResponse({ res, message, status, errors }: IProps) {
+	return res.status(status).json(buildProblemDetailsError({ message, status, errors }))
 }
 
 export function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
 	if (error instanceof Error) {
 		if (error instanceof NotFoundError) return sendErrorResponse({ res, message: error.message, status: error.status })
-		if (error instanceof ValidationError) return sendErrorResponse({ res, message: error.message, status: error.status })
+		if (error instanceof ValidationError)
+			return sendErrorResponse({ res, message: error.message, status: error.status, errors: error.errors })
 
 		// telegram errors
 		if (error.message.includes('wrong type of the web page content'))
