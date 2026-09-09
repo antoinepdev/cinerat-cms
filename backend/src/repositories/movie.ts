@@ -1,4 +1,3 @@
-import { Result } from 'pg'
 import { pool } from '../database/index.ts'
 import type { IMovie, IMovieToSave, ITelegramMovie } from '../entities/movie.ts'
 import type { IMovieFilters, IMovieToUpdateParams, ITelegramMovieInput } from '../schemas/movie.ts'
