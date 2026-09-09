@@ -1,3 +1,8 @@
+export interface IFieldError {
+	field: string
+	message: string
+}
+
 export class AppError extends Error {
 	readonly status: number
 
@@ -14,7 +19,9 @@ export class NotFoundError extends AppError {
 }
 
 export class ValidationError extends AppError {
-	constructor(message: string) {
+	readonly errors?: IFieldError[]
+	constructor(message: string, errors?: IFieldError[]) {
 		super(message, 422)
+		this.errors = errors
 	}
 }
