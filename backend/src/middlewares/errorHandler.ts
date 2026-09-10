@@ -10,7 +10,7 @@ interface IProps {
 }
 
 function sendErrorResponse({ res, message, status, errors }: IProps) {
-	return res.status(status).json(buildProblemDetailsError({ message, status, errors }))
+	return res.status(status).type('application/problem+json').json(buildProblemDetailsError({ message, status, errors }))
 }
 
 export function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
