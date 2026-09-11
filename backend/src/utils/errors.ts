@@ -25,3 +25,15 @@ export class ValidationError extends AppError {
 		this.errors = errors
 	}
 }
+
+export class InvalidPosterUrlError extends AppError {
+	constructor(posterUrl: string) {
+		super(`Invalid poster url: ${posterUrl}`, 422)
+	}
+}
+
+export class InvalidTelegramFileIdError extends AppError {
+	constructor(telegramFileId: number) {
+		super(`Invalid telegram_file_id: ${telegramFileId}`, 422)
+	}
+}
