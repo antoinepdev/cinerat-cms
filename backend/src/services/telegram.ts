@@ -1,10 +1,11 @@
 import type { IMovieToSave } from '../entities/movie.ts'
 import { getMovieCaption } from '../helpers/getMovieCaption.ts'
 import { getPosterCaption } from '../helpers/getPosterCaption.ts'
+import { isTelegramApiError } from '../helpers/isTelegramApiError.ts'
 import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import type { IMovieInput } from '../schemas/movie.ts'
-import { NotFoundError } from '../utils/errors.ts'
+import { InvalidPosterUrlError, InvalidTelegramFileIdError, NotFoundError } from '../utils/errors.ts'
 
 async function saveMovie(data: IMovieInput): Promise<IMovieToSave> {
 	const posterCaption = await getPosterCaption(data)
@@ -28,12 +29,33 @@ async function sendPoster(posterUrl: string, posterCaption: string): Promise<num
 		const sendedPoster = await bot.sendPhoto(MOVIE_CONTAINER_GROUP_ID, posterUrl, { caption: posterCaption })
 		const telegramPosterId = sendedPoster.message_id
 		return telegramPosterId
-	} catch (error)
+	} catch (error) {
+		if (
+			isTelegramApiError(error) &&
+			error.response.body.error_code === 400 &&
+			(error.response.body.description?.includes('wrong type of the web page content') ||
+				error.response.body.description?.includes('failed to get HTTP URL content'))
+		)
+			throw new InvalidPosterUrlError(posterUrl)
+		throw error
+	}
 }
 
 async function sendMovie(fileId: number, movieCaption: string): Promise<number> {
-	const sendedMovie = await bot.copyMessage(MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID, fileId, { caption: movieCaption })
-	return sendedMovie.message_id
+	try {
+		const sendedMovie = await bot.copyMessage(MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID, fileId, {
+			caption: movieCaption,
+		})
+		return sendedMovie.message_id
+	} catch (error) {
+		if (
+			isTelegramApiError(error) &&
+			error.response.body.error_code === 400 &&
+			error.response.body.description?.includes('message to copy not found')
+		)
+			throw new InvalidTelegramFileIdError(fileId)
+		throw error
+	}
 }
 
 async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
