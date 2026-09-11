@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { buildProblemDetailsError } from '../helpers/buildProblemDetailsError.ts'
-import { type IFieldError, NotFoundError, ValidationError } from '../utils/errors.ts'
+import { type IFieldError, InvalidPosterUrlError, InvalidTelegramFileIdError, NotFoundError, ValidationError } from '../utils/errors.ts'
 
 interface IProps {
 	res: Response
@@ -19,12 +19,8 @@ export function errorHandler(error: unknown, _: Request, res: Response, __: Next
 		if (error instanceof ValidationError)
 			return sendErrorResponse({ res, message: error.message, status: error.status, errors: error.errors })
 
-		// telegram errors
-		if (error.message.includes('wrong type of the web page content'))
-			return sendErrorResponse({ res, message: 'Invalid poster url', status: 422 })
-
-		if (error.message.includes('message to copy not found'))
-			return sendErrorResponse({ res, message: 'Invalid telegram_file_id', status: 422 })
+		if (error instanceof InvalidPosterUrlError) return sendErrorResponse({ res, message: error.message, status: error.status })
+		if (error instanceof InvalidTelegramFileIdError) return sendErrorResponse({ res, message: error.message, status: error.status })
 
 		console.log(error.message)
 		return sendErrorResponse({ res, message: 'Server internal error', status: 500 })

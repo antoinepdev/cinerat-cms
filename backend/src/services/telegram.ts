@@ -24,9 +24,11 @@ async function saveMovie(data: IMovieInput): Promise<IMovieToSave> {
 }
 
 async function sendPoster(posterUrl: string, posterCaption: string): Promise<number> {
-	const sendedPoster = await bot.sendPhoto(MOVIE_CONTAINER_GROUP_ID, posterUrl, { caption: posterCaption })
-	const telegramPosterId = sendedPoster.message_id
-	return telegramPosterId
+	try {
+		const sendedPoster = await bot.sendPhoto(MOVIE_CONTAINER_GROUP_ID, posterUrl, { caption: posterCaption })
+		const telegramPosterId = sendedPoster.message_id
+		return telegramPosterId
+	} catch (error)
 }
 
 async function sendMovie(fileId: number, movieCaption: string): Promise<number> {
