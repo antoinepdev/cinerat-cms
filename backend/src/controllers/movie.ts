@@ -19,7 +19,7 @@ async function saveMovieHandler(req: Request, res: Response) {
 
 async function updateMovieHandler(req: Request, res: Response) {
 	const updatedMovie = await movieService.updateMovie(req.body)
-	return res.status(201).json(updatedMovie)
+	return res.status(200).json(updatedMovie)
 }
 
 const movieController = {
