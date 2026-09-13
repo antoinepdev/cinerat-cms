@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { buildProblemDetailsError } from '../helpers/buildProblemDetailsError.ts'
+import { mapDatabaseError } from '../helpers/mapDatabaseError.ts'
 import {
 	type IFieldError,
 	InvalidPosterUrlError,
@@ -26,6 +27,9 @@ export function errorHandler(error: unknown, _: Request, res: Response, __: Next
 
 	if (error instanceof InvalidPosterUrlError) return sendErrorResponse({ res, message: error.message, status: error.status })
 	if (error instanceof InvalidTelegramFileIdError) return sendErrorResponse({ res, message: error.message, status: error.status })
+
+	const dbError = mapDatabaseError(error)
+	if (dbError) return sendErrorResponse({ res, message: dbError.message, status: dbError.status, errors: dbError.errors })
 
 	console.log(error)
 	return sendErrorResponse({ res, message: 'Server internal error', status: 500 })
