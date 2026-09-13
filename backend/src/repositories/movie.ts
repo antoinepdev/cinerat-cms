@@ -11,30 +11,32 @@ async function getTelegramMovies(): Promise<ITelegramMovie[]> {
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
 		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres from movies'
-	let queryFilters: string = ''
-	const values = []
+
+	const conditions: string[] = []
+	const values: unknown[] = []
+
 	if (filters) {
 		if (filters.catalog_name) {
-			queryFilters += ` where catalog_name = $${values.length + 1}`
 			values.push(filters.catalog_name)
-			if (filters.catalog_version) {
-				queryFilters += `and catalog_version = $${values.length + 1}`
-				values.push(filters.catalog_version)
-			}
+			conditions.push(`catalog_name = $${values.length}`)
+		}
+		if (filters.catalog_version !== undefined) {
+			values.push(filters.catalog_version)
+			conditions.push(`catalog_version = $${values.length}`)
 		}
 		if (filters.year) {
-			if (values.length === 0) {
-				queryFilters = ` where year = $${values.length + 1}`
-				values.push(filters.year)
-			} else {
-				queryFilters += `and year = $${values.length + 1}`
-				values.push(filters.year)
-			}
+			values.push(filters.year)
+			conditions.push(`year = $${values.length}`)
 		}
-		if (filters.sort_by) queryFilters += `order by ${filters.sort_by}`
+		if (filters.tmdb_id) {
+			values.push(filters.tmdb_id)
+			conditions.push(`tmdb_id = $${values.length}`)
+		}
 	}
 
-	const queryWithFilters = baseQuery + queryFilters
+	const whereClause = conditions.length > 0 ? ` where ${conditions.join(' and ')}` : ''
+	const orderByClause = filters?.sort_by ? ` order by ${filters.sort_by}` : ''
+	const queryWithFilters = baseQuery + whereClause + orderByClause
 
 	const result = await pool.query(queryWithFilters, values)
 	return result.rows
