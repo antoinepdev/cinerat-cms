@@ -85,10 +85,10 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie | undefin
 		setClauses.push(`language_lat = $${values.length}`)
 	}
 
-	values.push(data.poster)
+	values.push(data.tmdb_id)
 
 	const result = await pool.query(
-		`UPDATE movies SET ${setClauses.join(', ')} WHERE poster = $${values.length} RETURNING *`,
+		`UPDATE movies SET ${setClauses.join(', ')} WHERE tmdb_id = $${values.length} RETURNING id, title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres`,
 		values,
 	)
 	return result.rows[0]

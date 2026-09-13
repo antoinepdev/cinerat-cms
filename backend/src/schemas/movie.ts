@@ -42,7 +42,7 @@ const MovieFiltersSchema = z
 
 const MovieToUpdateParamsSchema = z
 	.object({
-		poster: z.string().startsWith('https://'),
+		tmdb_id: z.number().int().positive(),
 		telegram_file_id_cas: z.number().int().optional(),
 		telegram_file_id_lat: z.number().int().optional(),
 	})
