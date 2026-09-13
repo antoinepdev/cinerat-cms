@@ -30,15 +30,6 @@ const TelegramMovieSchema = z.object({
 	is_saved: z.boolean(),
 })
 
-const TelegramFileSchema = z.object({
-	chat_id: MOVIE_LISTENER_GROUP_ID,
-	video: z.object(),
-	caption: z.string().refine((value) => {
-		const keywords = ['lat', 'castellano', '🇲🇽', '🇪🇸']
-		return keywords.some((keyword) => value.includes(keyword))
-	}),
-})
-
 const MovieFiltersSchema = z
 	.object({
 		catalog_name: z.string().optional(),
@@ -61,4 +52,4 @@ export type ITelegramMovieInput = z.infer<typeof TelegramMovieSchema>
 export type IMovieFilters = z.infer<typeof MovieFiltersSchema>
 export type IMovieToUpdateParams = z.infer<typeof MovieToUpdateParamsSchema>
 
-export { MovieFiltersSchema, MovieSchema, MovieToUpdateParamsSchema, TelegramFileSchema }
+export { MovieFiltersSchema, MovieSchema, MovieToUpdateParamsSchema }
