@@ -37,3 +37,11 @@ export class InvalidTelegramFileIdError extends AppError {
 		super(`Invalid telegram_file_id: ${telegramFileId}`, 422)
 	}
 }
+
+export class DatabaseError extends AppError {
+	readonly errors?: IFieldError[]
+	constructor(message: string, status: number, errors?: IFieldError[]) {
+		super(message, status)
+		this.errors = errors
+	}
+}
