@@ -25,8 +25,13 @@ async function saveMovie(movie: IMovieInput): Promise<IMovie> {
 }
 
 async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
-	const updatedMovie = await movieRepository.updateMovie(data)
+	const sourceFileIds = [data.telegram_file_id_cas, data.telegram_file_id_lat].filter((id): id is number => Boolean(id))
+
+	const movieToUpdate = await telegramService.updateMovieFiles(data)
+	const updatedMovie = await movieRepository.updateMovie(movieToUpdate)
 	if (!updatedMovie) throw new NotFoundError()
+	await telegramService.setTelegramMovieAsSaved(sourceFileIds)
+
 	return updatedMovie
 }
 

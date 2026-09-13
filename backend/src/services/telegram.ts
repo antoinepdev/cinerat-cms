@@ -4,7 +4,7 @@ import { getPosterCaption } from '../helpers/getPosterCaption.ts'
 import { isTelegramApiError } from '../helpers/isTelegramApiError.ts'
 import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
-import type { IMovieInput } from '../schemas/movie.ts'
+import type { IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
 import { InvalidPosterUrlError, InvalidTelegramFileIdError, NotFoundError } from '../utils/errors.ts'
 
 async function saveMovie(data: IMovieInput): Promise<IMovieToSave> {
@@ -58,6 +58,22 @@ async function sendMovie(fileId: number, movieCaption: string): Promise<number> 
 	}
 }
 
+async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpdateParams> {
+	const [existingMovie] = await movieRepository.getMovies({ tmdb_id: data.tmdb_id })
+	if (!existingMovie) throw new NotFoundError()
+
+	if (data.telegram_file_id_cas) {
+		const movieCaption = await getMovieCaption(existingMovie, 'cas')
+		data.telegram_file_id_cas = await sendMovie(data.telegram_file_id_cas, movieCaption)
+	}
+	if (data.telegram_file_id_lat) {
+		const movieCaption = await getMovieCaption(existingMovie, 'lat')
+		data.telegram_file_id_lat = await sendMovie(data.telegram_file_id_lat, movieCaption)
+	}
+
+	return data
+}
+
 async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
 	for (const fi of telegram_file_ids) {
 		if (fi) {
@@ -69,6 +85,7 @@ async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
 
 const telegramService = {
 	saveMovie,
+	updateMovieFiles,
 	setTelegramMovieAsSaved,
 }
 
