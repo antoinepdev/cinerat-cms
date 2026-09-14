@@ -1,4 +1,4 @@
-interface ITelegramError {
+export interface ITelegramError {
 	code: string
 	response: {
 		body: {
