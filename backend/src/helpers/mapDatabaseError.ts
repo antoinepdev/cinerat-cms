@@ -1,7 +1,7 @@
-import { DatabaseError as PgDatabaseError } from 'pg'
-import { DatabaseError, type IFieldError } from '../utils/errors.ts'
+import type { DatabaseError } from 'pg'
+import { AppError, type IFieldError } from '../utils/errors.ts'
 
-function getField(error: PgDatabaseError): string | undefined {
+function getField(error: DatabaseError): string | undefined {
 	if (error.column) return error.column
 	if (error.constraint) {
 		let field = error.constraint
@@ -12,7 +12,7 @@ function getField(error: PgDatabaseError): string | undefined {
 	return undefined
 }
 
-function buildFieldError(error: PgDatabaseError, message: string): IFieldError[] {
+function buildFieldError(error: DatabaseError, message: string): IFieldError[] {
 	const field = getField(error)
 	if (!field) return []
 	return [{ field, message }]
@@ -23,7 +23,7 @@ function getDuplicateMessage(field: string | undefined) {
 	return `Duplicate value for field ${field}`
 }
 
-function getCheckMessage(error: PgDatabaseError, field: string | undefined) {
+function getCheckMessage(error: DatabaseError, field: string | undefined) {
 	if (field && error.constraint) return `Value for field ${field} violates the constraint ${error.constraint}`
 	if (field) return `Invalid value for field ${field} violates a database constraint`
 	return 'Invalid value violates a database constraint'
@@ -44,9 +44,7 @@ function getErrorStatus(code: string) {
 	return 422
 }
 
-export function mapDatabaseError(error: unknown): DatabaseError | undefined {
-	if (!(error instanceof PgDatabaseError)) return undefined
-
+export function mapDatabaseError(error: DatabaseError): AppError | undefined {
 	const field = getField(error)
 
 	let message: string
@@ -71,5 +69,5 @@ export function mapDatabaseError(error: unknown): DatabaseError | undefined {
 			return undefined
 	}
 
-	return new DatabaseError(message, getErrorStatus(error.code), buildFieldError(error, message))
+	return new AppError(message, getErrorStatus(error.code), buildFieldError(error, message))
 }

@@ -1,13 +1,8 @@
 import type { NextFunction, Request, Response } from 'express'
+import { DatabaseError } from 'pg'
 import { buildProblemDetailsError } from '../helpers/buildProblemDetailsError.ts'
 import { mapDatabaseError } from '../helpers/mapDatabaseError.ts'
-import {
-	type IFieldError,
-	InvalidPosterUrlError,
-	InvalidTelegramFileIdError,
-	NotFoundError,
-	ValidationError,
-} from '../utils/errors.ts'
+import { AppError, type IFieldError } from '../utils/errors.ts'
 
 interface IProps {
 	res: Response
@@ -21,15 +16,12 @@ function sendErrorResponse({ res, message, status, errors }: IProps) {
 }
 
 export function errorHandler(error: unknown, _: Request, res: Response, __: NextFunction) {
-	if (error instanceof NotFoundError) return sendErrorResponse({ res, message: error.message, status: error.status })
-	if (error instanceof ValidationError)
+	if (error instanceof DatabaseError) {
+		const dbError = mapDatabaseError(error)
+		if (dbError) return sendErrorResponse({ res, message: dbError.message, status: dbError.status, errors: dbError.errors })
+	}
+	if (error instanceof AppError)
 		return sendErrorResponse({ res, message: error.message, status: error.status, errors: error.errors })
-
-	if (error instanceof InvalidPosterUrlError) return sendErrorResponse({ res, message: error.message, status: error.status })
-	if (error instanceof InvalidTelegramFileIdError) return sendErrorResponse({ res, message: error.message, status: error.status })
-
-	const dbError = mapDatabaseError(error)
-	if (dbError) return sendErrorResponse({ res, message: dbError.message, status: dbError.status, errors: dbError.errors })
 
 	console.log(error)
 	return sendErrorResponse({ res, message: 'Server internal error', status: 500 })

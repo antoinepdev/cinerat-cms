@@ -4,11 +4,13 @@ export interface IFieldError {
 }
 
 export class AppError extends Error {
-	readonly status: number
+	readonly status
+	readonly errors
 
-	constructor(message: string, status: number) {
+	constructor(message: string, status: number, errors?: IFieldError[]) {
 		super(message)
 		this.status = status
+		this.errors = errors
 	}
 }
 
@@ -19,10 +21,8 @@ export class NotFoundError extends AppError {
 }
 
 export class ValidationError extends AppError {
-	readonly errors?: IFieldError[]
 	constructor(message: string, errors?: IFieldError[]) {
-		super(message, 422)
-		this.errors = errors
+		super(message, 422, errors)
 	}
 }
 
@@ -35,13 +35,5 @@ export class InvalidPosterUrlError extends AppError {
 export class InvalidTelegramFileIdError extends AppError {
 	constructor(telegramFileId: number) {
 		super(`Invalid telegram_file_id: ${telegramFileId}`, 422)
-	}
-}
-
-export class DatabaseError extends AppError {
-	readonly errors?: IFieldError[]
-	constructor(message: string, status: number, errors?: IFieldError[]) {
-		super(message, status)
-		this.errors = errors
 	}
 }
