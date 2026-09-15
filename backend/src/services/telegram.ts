@@ -3,6 +3,7 @@ import { getMovieCaption } from '../helpers/getMovieCaption.ts'
 import { getPosterCaption } from '../helpers/getPosterCaption.ts'
 import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
+import { videosRepository } from '../repositories/videos.ts'
 import type { IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
 import { NotFoundError } from '../utils/errors.ts'
 
@@ -54,7 +55,7 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 async function markVideosAsProcessed(messageIds: number[]) {
 	for (const messageId of messageIds) {
 		if (messageId) {
-			const updatedVideo = await movieRepository.markVideoAsProcessed(messageId)
+			const updatedVideo = await videosRepository.markVideoAsProcessed(messageId)
 			if (!updatedVideo) throw new NotFoundError('Incoming video not found')
 		}
 	}

@@ -9,11 +9,6 @@ async function getMovies(filters: IMovieFilters) {
 	return movies
 }
 
-async function getPendingVideos() {
-	const pendingVideos = await movieRepository.getPendingVideos()
-	return pendingVideos
-}
-
 async function saveMovie(movie: IMovieInput): Promise<IMovie> {
 	const sourceMessageIds = [movie.telegram_file_id_cas, movie.telegram_file_id_lat].filter((id): id is number => Boolean(id))
 
@@ -37,7 +32,6 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
 
 export const movieService = {
 	getMovies,
-	getPendingVideos,
 	saveMovie,
 	updateMovie,
 }

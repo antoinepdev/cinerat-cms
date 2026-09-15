@@ -1,11 +1,6 @@
 import type { Request, Response } from 'express'
 import { movieService } from '../services/movies.ts'
 
-async function getPendingVideosHandler(_: Request, res: Response) {
-	const pendingVideos = await movieService.getPendingVideos()
-	return res.status(200).json(pendingVideos)
-}
-
 async function getMoviesHandler(req: Request, res: Response) {
 	const filters = req.filteredQuery
 	const movies = await movieService.getMovies(filters)
@@ -23,7 +18,6 @@ async function updateMovieHandler(req: Request, res: Response) {
 }
 
 const movieController = {
-	getPendingVideosHandler,
 	getMoviesHandler,
 	saveMovieHandler,
 	updateMovieHandler,

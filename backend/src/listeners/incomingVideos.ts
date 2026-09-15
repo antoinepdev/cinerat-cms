@@ -2,7 +2,7 @@ import { cleanText } from '../helpers/cleanText.ts'
 import { getLanguage } from '../helpers/getLanguage.ts'
 import { toPascalCase } from '../helpers/toPascalCase.ts'
 import { bot, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
-import { movieRepository } from '../repositories/movie.ts'
+import { videosRepository } from '../repositories/videos.ts'
 import type { IIncomingVideoInput } from '../schemas/movie.ts'
 
 bot.on('video', async (msg) => {
@@ -23,6 +23,6 @@ bot.on('video', async (msg) => {
 		is_processed: false,
 	}
 
-	await movieRepository.saveIncomingVideo(video)
+	await videosRepository.saveIncomingVideo(video)
 	console.log(video)
 })

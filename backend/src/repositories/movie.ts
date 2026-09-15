@@ -1,12 +1,6 @@
 import { pool } from '../database/index.ts'
-import type { IIncomingVideo, IMovie, IMovieToSave } from '../entities/movie.ts'
-import type { IIncomingVideoInput, IMovieFilters, IMovieToUpdateParams } from '../schemas/movie.ts'
-
-async function getPendingVideos(): Promise<IIncomingVideo[]> {
-	const query = 'SELECT * FROM incoming_videos WHERE is_processed = false'
-	const result = await pool.query(query)
-	return result.rows
-}
+import type { IMovie, IMovieToSave } from '../entities/movie.ts'
+import type { IMovieFilters, IMovieToUpdateParams } from '../schemas/movie.ts'
 
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
@@ -94,26 +88,9 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie | undefin
 	return result.rows[0]
 }
 
-async function markVideoAsProcessed(telegramMessageId: number) {
-	const result = await pool.query('UPDATE incoming_videos SET is_processed = true WHERE telegram_message_id = $1 RETURNING *', [
-		telegramMessageId,
-	])
-	return result.rows[0]
-}
-
-async function saveIncomingVideo(data: IIncomingVideoInput): Promise<IIncomingVideoInput> {
-	const query = 'INSERT INTO incoming_videos (telegram_message_id, caption, language, is_processed) Values ($1, $2, $3, $4)'
-	const values = [data.telegram_message_id, data.caption, data.language, data.is_processed]
-	const result = await pool.query(query, values)
-	return result.rows[0]
-}
-
 const movieRepository = {
-	getPendingVideos,
 	getMovies,
 	saveMovie,
-	markVideoAsProcessed,
-	saveIncomingVideo,
 	updateMovie,
 }
 
