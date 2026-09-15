@@ -1,6 +1,6 @@
-import type { IMovieInput, ITelegramMovieInput } from '../schemas/movie.ts'
+import type { IIncomingVideoInput, IMovieInput } from '../schemas/movie.ts'
 
-export interface ITelegramMovie extends ITelegramMovieInput {
+export interface IIncomingVideo extends IIncomingVideoInput {
 	id: number
 }
 

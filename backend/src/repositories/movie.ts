@@ -1,9 +1,9 @@
 import { pool } from '../database/index.ts'
-import type { IMovie, IMovieToSave, ITelegramMovie } from '../entities/movie.ts'
-import type { IMovieFilters, IMovieToUpdateParams, ITelegramMovieInput } from '../schemas/movie.ts'
+import type { IIncomingVideo, IMovie, IMovieToSave } from '../entities/movie.ts'
+import type { IIncomingVideoInput, IMovieFilters, IMovieToUpdateParams } from '../schemas/movie.ts'
 
-async function getTelegramMovies(): Promise<ITelegramMovie[]> {
-	const query = 'SELECT * FROM telegram_movies WHERE is_saved = false'
+async function getPendingVideos(): Promise<IIncomingVideo[]> {
+	const query = 'SELECT * FROM incoming_videos WHERE is_processed = false'
 	const result = await pool.query(query)
 	return result.rows
 }
@@ -94,24 +94,26 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie | undefin
 	return result.rows[0]
 }
 
-async function updateTelegramMovie(file_id: number) {
-	const result = await pool.query('UPDATE telegram_movies SET is_saved = true WHERE file_id = $1 RETURNING *', [file_id])
+async function markVideoAsProcessed(telegramMessageId: number) {
+	const result = await pool.query('UPDATE incoming_videos SET is_processed = true WHERE telegram_message_id = $1 RETURNING *', [
+		telegramMessageId,
+	])
 	return result.rows[0]
 }
 
-async function saveTelegramMovie(data: ITelegramMovieInput): Promise<ITelegramMovieInput> {
-	const query = 'INSERT INTO telegram_movies (file_id, message_text, language, is_saved) Values ($1, $2, $3, $4)'
-	const values = [data.file_id, data.message_text, data.language, data.is_saved]
+async function saveIncomingVideo(data: IIncomingVideoInput): Promise<IIncomingVideoInput> {
+	const query = 'INSERT INTO incoming_videos (telegram_message_id, caption, language, is_processed) Values ($1, $2, $3, $4)'
+	const values = [data.telegram_message_id, data.caption, data.language, data.is_processed]
 	const result = await pool.query(query, values)
 	return result.rows[0]
 }
 
 const movieRepository = {
-	getTelegramMovies,
+	getPendingVideos,
 	getMovies,
 	saveMovie,
-	updateTelegramMovie,
-	saveTelegramMovie,
+	markVideoAsProcessed,
+	saveIncomingVideo,
 	updateMovie,
 }
 

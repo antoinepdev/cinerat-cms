@@ -5,7 +5,7 @@ import { validateSaveMovieBody } from '../middlewares/validateSaveMovieBody.ts'
 import { validateUpdateMovieBody } from '../middlewares/validateUpdateMovieBody.ts'
 
 const router = Router()
-router.get('/telegram', movieController.getTelegramMovieHandler)
+router.get('/telegram', movieController.getPendingVideosHandler)
 router.get('/', validateGetMoviesQueryParams, movieController.getMoviesHandler)
 router.post('/', validateSaveMovieBody, movieController.saveMovieHandler)
 router.patch('/', validateUpdateMovieBody, movieController.updateMovieHandler)

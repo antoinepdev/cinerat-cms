@@ -51,11 +51,11 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 	return data
 }
 
-async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
-	for (const fi of telegram_file_ids) {
-		if (fi) {
-			const updatedTelegramMovie = await movieRepository.updateTelegramMovie(fi)
-			if (!updatedTelegramMovie) throw new NotFoundError('Telegram movie not found')
+async function markVideosAsProcessed(messageIds: number[]) {
+	for (const messageId of messageIds) {
+		if (messageId) {
+			const updatedVideo = await movieRepository.markVideoAsProcessed(messageId)
+			if (!updatedVideo) throw new NotFoundError('Incoming video not found')
 		}
 	}
 }
@@ -63,7 +63,7 @@ async function setTelegramMovieAsSaved(telegram_file_ids: number[]) {
 const telegramService = {
 	saveMovie,
 	updateMovieFiles,
-	setTelegramMovieAsSaved,
+	markVideosAsProcessed,
 }
 
 export { telegramService }

@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
 
 const MovieSchema = z
 	.object({
@@ -23,11 +22,11 @@ const MovieSchema = z
 	})
 	.strip()
 
-const TelegramMovieSchema = z.object({
-	file_id: z.number().int().positive(),
-	message_text: z.string(),
+const IncomingVideoSchema = z.object({
+	telegram_message_id: z.number().int().positive(),
+	caption: z.string(),
 	language: z.enum(['latino', 'castellano']),
-	is_saved: z.boolean(),
+	is_processed: z.boolean(),
 })
 
 const MovieFiltersSchema = z
@@ -49,7 +48,7 @@ const MovieToUpdateParamsSchema = z
 	.strip()
 
 export type IMovieInput = z.infer<typeof MovieSchema>
-export type ITelegramMovieInput = z.infer<typeof TelegramMovieSchema>
+export type IIncomingVideoInput = z.infer<typeof IncomingVideoSchema>
 export type IMovieFilters = z.infer<typeof MovieFiltersSchema>
 export type IMovieToUpdateParams = z.infer<typeof MovieToUpdateParamsSchema>
 

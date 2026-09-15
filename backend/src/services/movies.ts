@@ -9,35 +9,35 @@ async function getMovies(filters: IMovieFilters) {
 	return movies
 }
 
-async function getTelegramMovies() {
-	const telegramMovies = await movieRepository.getTelegramMovies()
-	return telegramMovies
+async function getPendingVideos() {
+	const pendingVideos = await movieRepository.getPendingVideos()
+	return pendingVideos
 }
 
 async function saveMovie(movie: IMovieInput): Promise<IMovie> {
-	const old_telegram_file_ids = [movie.telegram_file_id_cas, movie.telegram_file_id_lat].filter((id): id is number => Boolean(id))
+	const sourceMessageIds = [movie.telegram_file_id_cas, movie.telegram_file_id_lat].filter((id): id is number => Boolean(id))
 
 	const movieToSave: IMovieToSave = await telegramService.saveMovie(movie)
 	const savedMovie = await movieRepository.saveMovie({ ...movieToSave, quality: undefined })
-	await telegramService.setTelegramMovieAsSaved(old_telegram_file_ids)
+	await telegramService.markVideosAsProcessed(sourceMessageIds)
 
 	return savedMovie
 }
 
 async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie> {
-	const sourceFileIds = [data.telegram_file_id_cas, data.telegram_file_id_lat].filter((id): id is number => Boolean(id))
+	const sourceMessageIds = [data.telegram_file_id_cas, data.telegram_file_id_lat].filter((id): id is number => Boolean(id))
 
 	const movieToUpdate = await telegramService.updateMovieFiles(data)
 	const updatedMovie = await movieRepository.updateMovie(movieToUpdate)
 	if (!updatedMovie) throw new NotFoundError()
-	await telegramService.setTelegramMovieAsSaved(sourceFileIds)
+	await telegramService.markVideosAsProcessed(sourceMessageIds)
 
 	return updatedMovie
 }
 
 export const movieService = {
 	getMovies,
-	getTelegramMovies,
+	getPendingVideos,
 	saveMovie,
 	updateMovie,
 }

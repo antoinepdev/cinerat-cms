@@ -22,10 +22,10 @@ CREATE TABLE movies (
 
 )
 
-CREATE TABLE telegram_movies (
+CREATE TABLE incoming_videos (
     id SERIAL PRIMARY KEY,
-    file_id INT NOT NULL UNIQUE,
-    message_text NOT NULL,
+    telegram_message_id INT NOT NULL UNIQUE,
+    caption TEXT NOT NULL,
     language TEXT NOT NULL CHECK (language IN ('latino', 'castellano')),
-    is_saved BOOLEAN DEFAULT FALSE
+    is_processed BOOLEAN DEFAULT FALSE
 )
