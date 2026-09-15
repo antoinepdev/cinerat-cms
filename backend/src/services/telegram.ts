@@ -5,7 +5,7 @@ import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provi
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
 import type { IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
-import { NotFoundError } from '../utils/errors.ts'
+import { ConflictError, NotFoundError } from '../utils/errors.ts'
 
 async function saveMovie(data: IMovieInput): Promise<IMovieToSave> {
 	const posterCaption = await getPosterCaption(data)
@@ -39,6 +39,9 @@ async function sendMovie(fileId: number, movieCaption: string): Promise<number> 
 async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpdateParams> {
 	const [existingMovie] = await movieRepository.getMovies({ tmdb_id: data.tmdb_id })
 	if (!existingMovie) throw new NotFoundError()
+
+	if (data.telegram_file_id_cas && existingMovie.language_cas) throw new ConflictError('Movie already has castellano audio')
+	if (data.telegram_file_id_lat && existingMovie.language_lat) throw new ConflictError('Movie already has latino audio')
 
 	if (data.telegram_file_id_cas) {
 		const movieCaption = await getMovieCaption(existingMovie, 'cas')
