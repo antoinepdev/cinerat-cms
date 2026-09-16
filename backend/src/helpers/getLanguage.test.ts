@@ -2,41 +2,59 @@ import { describe, expect, it } from 'vitest'
 import { getLanguage } from './getLanguage.ts'
 
 describe('getLanguage', () => {
-	it('returns latino when text contains the word latino', async () => {
-		const result = await getLanguage('Pelicula latino')
-		expect(result).toBe('latino')
+	it.for<{ word: string; expected: string }>([
+		{ word: 'latino', expected: 'latino' },
+		{ word: 'lat', expected: 'latino' },
+		{ word: '🇲🇽', expected: 'latino' },
+		{ word: 'castellano', expected: 'castellano' },
+		{ word: 'cas', expected: 'castellano' },
+		{ word: '🇪🇸', expected: 'castellano' },
+	])('returns $expected when text contains the word $word', async ({ word, expected }) => {
+		const result = await getLanguage(`Juan de los muertos ${word}`)
+		expect(result).toBe(expected)
 	})
 
-	it('returns latino for the short form "lat"', async () => {
-		expect(await getLanguage('Pelicula lat')).toBe('latino')
+	it.for<{ word: string; expected: string }>([
+		{ word: 'LATino', expected: 'latino' },
+		{ word: 'LAT', expected: 'latino' },
+		{ word: 'CaSTELLANO', expected: 'castellano' },
+		{ word: 'Cas', expected: 'castellano' },
+	])('matches $expected case-insensitively', async ({ word, expected }) => {
+		expect(await getLanguage(`Juan de los muertos ${word}`)).toBe(expected)
 	})
 
-	it('matches latino case-insensitively', async () => {
-		expect(await getLanguage('Pelicula LATINO')).toBe('latino')
+	it.for<{ word: string; expected: string }>([
+		{ word: 'lat!', expected: 'latino' },
+		{ word: '(lat)', expected: 'latino' },
+		{ word: 'castellano:', expected: 'castellano' },
+	])('returns $expected when "$word" has surrounding punctuation', async ({ word, expected }) => {
+		expect(await getLanguage(`Juan de los muertos ${word}`)).toBe(expected)
 	})
 
-	it('returns latino when the mexican flag is present', async () => {
-		expect(await getLanguage('Pelicula 🇲🇽')).toBe('latino')
-	})
-
-	it('returns castellano when text contains the word castellano', async () => {
-		expect(await getLanguage('Pelicula castellano')).toBe('castellano')
-	})
-
-	it('matches castellano case-insensitively', async () => {
-		expect(await getLanguage('Pelicula CASTElLANO')).toBe('castellano')
-	})
-
-	it('returns castellano when the spanish flag is present', async () => {
-		expect(await getLanguage('Pelicula 🇪🇸')).toBe('castellano')
+	it.for<{ word: string; expected: string }>([
+		{ word: 'lat-1080p', expected: 'latino' },
+		{ word: '720p-cas', expected: 'castellano' },
+		{ word: 'Cas-720p', expected: 'castellano' },
+	])('returns $expected when "$word" contains hyphens', async ({ word, expected }) => {
+		expect(await getLanguage(`Juan de los muertos ${word}`)).toBe(expected)
 	})
 
 	it('returns undefined when no language is detected', async () => {
 		expect(await getLanguage('Pelicula normal')).toBeUndefined()
 	})
 
-	it('returns undefined when "lat" appears inside another word', async () => {
-		expect(await getLanguage('Plato')).toBeUndefined()
+	it.for<{ word: string; expected: string }>([
+		{ word: 'plato', expected: 'lat' },
+		{ word: 'casa', expected: 'cas' },
+	])('returns undefined when "$expected" appears inside another word', async ({ word }) => {
+		expect(await getLanguage(word)).toBeUndefined()
+	})
+
+	it.for<{ word: string; expected: string }>([
+		{ word: 'lát', expected: 'lat' },
+		{ word: 'Cás', expected: 'cas' },
+	])('returns undefined when "$expected" has accented characters like $word', async ({ word }) => {
+		expect(await getLanguage(word)).toBeUndefined()
 	})
 
 	it('prefers latino when both languages are present', async () => {
