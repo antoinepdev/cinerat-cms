@@ -2,29 +2,21 @@ import { describe, expect, it } from 'vitest'
 import { toPascalCase } from './toPascalCase.ts'
 
 describe('toPascalCase', () => {
-	it('capitalizes each word', () => {
-		expect(toPascalCase('avengers endgame')).toBe('Avengers Endgame')
+	it.for<{ input: string; expected: string }>([
+		{ input: 'avengers endgame', expected: 'Avengers Endgame' },
+		{ input: 'AVENGERS', expected: 'Avengers' },
+		{ input: 'avatar', expected: 'Avatar' },
+		{ input: '', expected: '' },
+		{ input: 'Star   Wars', expected: 'Star   Wars' },
+	])('returns "$expected" for "$input"', ({ input, expected }) => {
+		expect(toPascalCase(input)).toBe(expected)
 	})
 
-	it('handles accented characters', () => {
-		expect(toPascalCase('pÉREZ')).toBe('Pérez')
-		expect(toPascalCase('ñandú')).toBe('Ñandú')
-		expect(toPascalCase('álVarez')).toBe('Álvarez')
-	})
-
-	it('lowercases the rest of the word', () => {
-		expect(toPascalCase('AVENGERS')).toBe('Avengers')
-	})
-
-	it('capitalizes a single word', () => {
-		expect(toPascalCase('avatar')).toBe('Avatar')
-	})
-
-	it('returns empty string for empty input', () => {
-		expect(toPascalCase('')).toBe('')
-	})
-
-	it('preserves multiple spaces between words', () => {
-		expect(toPascalCase('Star   Wars')).toBe('Star   Wars')
+	it.for<{ input: string; expected: string }>([
+		{ input: 'pÉREZ', expected: 'Pérez' },
+		{ input: 'ñandú', expected: 'Ñandú' },
+		{ input: 'álVarez', expected: 'Álvarez' },
+	])('handles accented characters: "$input" to "$expected"', ({ input, expected }) => {
+		expect(toPascalCase(input)).toBe(expected)
 	})
 })
