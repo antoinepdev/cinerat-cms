@@ -2,41 +2,24 @@ import { describe, expect, it } from 'vitest'
 import { cleanText } from './cleanText.ts'
 
 describe('cleanText', () => {
-	it('removes the word "español"', () => {
-		expect(cleanText('Avengers español')).toBe('Avengers')
+	it.for<{ input: string; expected: string }>([
+		{ input: 'Avengers español', expected: 'Avengers' },
+		{ input: 'Avatar LATINO', expected: 'Avatar' },
+		{ input: 'Si, el Padrino castellano es bueno', expected: 'Si el Padrino es bueno' },
+		{ input: 'Transformers 🇲🇽', expected: 'Transformers' },
+		{ input: 'Inception 🇪🇸', expected: 'Inception' },
+	])('removes the language words and flags from "$input"', ({ input, expected }) => {
+		expect(cleanText(input)).toBe(expected)
 	})
 
-	it('removes the word "latino" case-insensitively', () => {
-		expect(cleanText('Avatar LATINO')).toBe('Avatar')
-	})
-
-	it('removes the word "castellano" in the middle of the text', () => {
-		expect(cleanText('Si, el Padrino castellano es bueno')).toBe('Si el Padrino es bueno')
-	})
-
-	it('removes the language flags', () => {
-		expect(cleanText('Transformers 🇲🇽')).toBe('Transformers')
-		expect(cleanText('Inception 🇪🇸')).toBe('Inception')
-	})
-
-	it('keeps accented characters and "ñ"', () => {
-		expect(cleanText('Mi pobre angelito áéíóú ñ')).toBe('Mi pobre angelito áéíóú ñ')
-	})
-
-	it('strips punctuation and symbols', () => {
-		expect(cleanText('Avatar. - ¡2! (2022)')).toBe('Avatar 2 2022')
-	})
-
-	it('collapses multiple spaces into one', () => {
-		expect(cleanText('  Star   Wars  ')).toBe('Star Wars')
-	})
-
-	it('returns an empty string when only keywords or symbols remain', () => {
-		expect(cleanText('🇲🇽 español')).toBe('')
-		expect(cleanText('!!! ---')).toBe('')
-	})
-
-	it('keeps only numbers when the rest is junk', () => {
-		expect(cleanText('1984 - best movie!!!')).toBe('1984 best movie')
+	it.for<{ input: string; expected: string }>([
+		{ input: 'Mi pobre angelito áéíóú ñ', expected: 'Mi pobre angelito áéíóú ñ' },
+		{ input: 'Avatar. - ¡2! (2022)', expected: 'Avatar 2 2022' },
+		{ input: '  Star   Wars  ', expected: 'Star Wars' },
+		{ input: '🇲🇽 español', expected: '' },
+		{ input: '!!! ---', expected: '' },
+		{ input: '1984 - best movie!!!', expected: '1984 best movie' },
+	])('returns "$expected" when "$input" is cleaned', ({ input, expected }) => {
+		expect(cleanText(input)).toBe(expected)
 	})
 })
