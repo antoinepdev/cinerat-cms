@@ -3,7 +3,9 @@ import type { IMovieInput } from '../schemas/movie.ts'
 const TELEGRAM_CAPTION_CHARACTER_LIMIT = 1024
 const ELLIPSIS = '...'
 
-export async function getPosterCaption(movie: IMovieInput): Promise<string> {
+export type IMoviePosterCaption = Pick<IMovieInput, 'title_en' | 'title_cas' | 'title_lat' | 'year' | 'description'>
+
+export async function getPosterCaption(movie: IMoviePosterCaption): Promise<string> {
 	const { title_en, title_cas, title_lat, year, description } = movie
 	const availableTitles = [title_en, title_cas, title_lat].filter(Boolean)
 
