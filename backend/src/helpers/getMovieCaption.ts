@@ -1,6 +1,8 @@
 import type { IMovieInput } from '../schemas/movie.ts'
 
-export async function getMovieCaption(movie: IMovieInput, language: 'cas' | 'lat'): Promise<string> {
+export type IMovieCaptionInput = Pick<IMovieInput, 'title_en' | 'title_cas' | 'title_lat' | 'year'>
+
+export async function getMovieCaption(movie: IMovieCaptionInput, language: 'cas' | 'lat'): Promise<string> {
 	const { title_en, title_cas, title_lat, year } = movie
 	const availableTitles = [title_en, title_cas, title_lat].filter(Boolean)
 
