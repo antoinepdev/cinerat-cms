@@ -2,6 +2,16 @@ import { pool } from '../database/index.ts'
 import type { IMovie, IMovieToSave } from '../entities/movie.ts'
 import type { IMovieFilters, IMovieToUpdateParams } from '../schemas/movie.ts'
 
+const SORT_COLUMNS = {
+	title_en: 'title_en',
+	title_cas: 'title_cas',
+	title_lat: 'title_lat',
+	year: 'year',
+	language_cas: 'language_cas',
+	language_lat: 'language_lat',
+	id: 'id',
+} as const
+
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
 		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres from movies'
@@ -29,7 +39,8 @@ async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	}
 
 	const whereClause = conditions.length > 0 ? ` where ${conditions.join(' and ')}` : ''
-	const orderByClause = filters?.sort_by ? ` order by ${filters.sort_by}` : ''
+	const sortBy = filters?.sort_by ? SORT_COLUMNS[filters.sort_by] : undefined
+	const orderByClause = sortBy ? ` order by ${sortBy}` : ''
 	const queryWithFilters = baseQuery + whereClause + orderByClause
 
 	const result = await pool.query(queryWithFilters, values)
