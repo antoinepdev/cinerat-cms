@@ -32,7 +32,7 @@ const IncomingVideoSchema = z.object({
 const MovieFiltersSchema = z
 	.object({
 		catalog_name: z.string().optional(),
-		catalog_version: z.number().int().optional(),
+		catalog_version: z.coerce.number().int().optional(),
 		year: z.coerce.number().int().positive().optional(),
 		tmdb_id: z.coerce.number().int().positive().optional(),
 		sort_by: z.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id']).optional(),
