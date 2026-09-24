@@ -22,10 +22,16 @@ async function saveIncomingVideo(data: IIncomingVideoInput): Promise<IIncomingVi
 	return result.rows[0]
 }
 
+async function deleteIncomingVideo(id: number): Promise<{ id: number } | undefined> {
+	const result = await pool.query('DELETE FROM incoming_videos WHERE id = $1 RETURNING id', [id])
+	return result.rows[0]
+}
+
 const videosRepository = {
 	getPendingVideos,
 	markVideoAsProcessed,
 	saveIncomingVideo,
+	deleteIncomingVideo,
 }
 
 export { videosRepository }
