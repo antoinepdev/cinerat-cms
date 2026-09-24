@@ -8,7 +8,7 @@ CREATE TABLE movies (
     telegram_file_id_lat INT UNIQUE,
     language_cas BOOLEAN DEFAULT FALSE,
     language_lat BOOLEAN DEFAULT FALSE,
-    catalog_name TEXT NOT NULL,
+    catalog_name TEXT NOT NULL DEFAULT 'standard',
     catalog_version SMALLINT NOT NULL,
     quality TEXT,
     poster TEXT NOT NULL UNIQUE CHECK ( poster ~ '^https:\/\/.+' ),
