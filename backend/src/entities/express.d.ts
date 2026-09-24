@@ -4,6 +4,7 @@ declare global {
 	namespace Express {
 		interface Request {
 			filteredQuery: IMovieFilters
+			filteredParams?: { id: number }
 		}
 	}
 }
