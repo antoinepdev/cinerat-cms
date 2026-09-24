@@ -40,8 +40,12 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 	const [existingMovie] = await movieRepository.getMovies({ tmdb_id: data.tmdb_id })
 	if (!existingMovie) throw new NotFoundError()
 
-	if (data.telegram_file_id_cas && existingMovie.language_cas) throw new ConflictError('Movie already has castellano audio')
-	if (data.telegram_file_id_lat && existingMovie.language_lat) throw new ConflictError('Movie already has latino audio')
+	const alreadyHasCas = Boolean(data.telegram_file_id_cas && existingMovie.language_cas)
+	const alreadyHasLat = Boolean(data.telegram_file_id_lat && existingMovie.language_lat)
+
+	if (alreadyHasCas && alreadyHasLat) throw new ConflictError('Movie already has castellano and latino audio')
+	if (alreadyHasCas) throw new ConflictError('Movie already has castellano audio')
+	if (alreadyHasLat) throw new ConflictError('Movie already has latino audio')
 
 	if (data.telegram_file_id_cas) {
 		const movieCaption = await getMovieCaption(existingMovie, 'cas')

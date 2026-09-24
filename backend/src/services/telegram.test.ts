@@ -130,6 +130,12 @@ describe('telegramService', () => {
 				params: { tmdb_id: 19995, telegram_file_id_lat: 222 },
 				message: 'Movie already has latino audio',
 			},
+			{
+				language: 'castellano and latino',
+				overrides: { language_cas: true, language_lat: true },
+				params: { tmdb_id: 19995, telegram_file_id_cas: 111, telegram_file_id_lat: 222 },
+				message: 'Movie already has castellano and latino audio',
+			},
 		])('throws ConflictError when the movie already has $language audio', async ({ overrides, params, message }) => {
 			vi.mocked(movieRepository.getMovies).mockResolvedValue([makeMovie(overrides)])
 

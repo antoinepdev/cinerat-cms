@@ -157,4 +157,21 @@ describe('PATCH /movies', () => {
 		expect(copyMessage).not.toHaveBeenCalled()
 		expect(poolQuery).toHaveBeenCalledTimes(1)
 	})
+
+	it('returns 409 problem+json naming both languages when the movie already has both audios', async () => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie({ language_cas: true, language_lat: true })] })
+
+		const res = await request(app)
+			.patch('/movies')
+			.send({ tmdb_id: 19995, telegram_file_id_cas: 12, telegram_file_id_lat: 13 })
+			.expect(409)
+
+		expect(res.body).toMatchObject({
+			status: 409,
+			title: 'Conflict',
+			detail: 'Movie already has castellano and latino audio',
+		})
+		expect(copyMessage).not.toHaveBeenCalled()
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+	})
 })
