@@ -101,6 +101,23 @@ describe('errorHandler', () => {
 		})
 	})
 
+	it('responds 400 with problem+json when the JSON body is malformed', () => {
+		const res = makeRes()
+		const error = new SyntaxError('Unexpected token } in JSON at position 5')
+		;(error as { status?: number }).status = 400
+
+		errorHandler(error, {} as unknown as Request, res as unknown as Response, vi.fn() as NextFunction)
+
+		expect(res.status).toHaveBeenCalledWith(400)
+		expect(res.json).toHaveBeenCalledWith({
+			type: 'about:blank',
+			title: 'Bad Request',
+			detail: 'Malformed JSON body',
+			status: 400,
+			errors: undefined,
+		})
+	})
+
 	it('logs the error and responds 500 for unknown errors', () => {
 		const res = makeRes()
 		const error = new Error('boom')

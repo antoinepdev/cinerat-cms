@@ -29,6 +29,10 @@ export function errorHandler(error: unknown, _: Request, res: Response, __: Next
 	if (error instanceof AppError)
 		return sendErrorResponse({ res, message: error.message, status: error.status, errors: error.errors })
 
+	const bodyParserStatus = (error as { status?: number }).status
+	if (error instanceof SyntaxError && bodyParserStatus !== undefined)
+		return sendErrorResponse({ res, message: 'Malformed JSON body', status: bodyParserStatus })
+
 	console.log(error)
 	return sendErrorResponse({ res, message: 'Server internal error', status: 500 })
 }
