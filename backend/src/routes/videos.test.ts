@@ -30,3 +30,35 @@ describe('GET /videos/pending', () => {
 		expect(poolQuery.mock.calls[0]![0]).toContain('is_processed = false')
 	})
 })
+
+describe('DELETE /videos/:id', () => {
+	beforeEach(() => poolQuery.mockReset())
+
+	it('deletes an existing incoming video and returns 204', async () => {
+		poolQuery.mockResolvedValue({ rows: [{ id: 1 }] } as unknown as { rows: IIncomingVideo[] })
+
+		const res = await request(app).delete('/videos/1').expect(204)
+
+		expect(res.body).toEqual({})
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain('DELETE FROM incoming_videos WHERE id = $1')
+		expect(poolQuery.mock.calls[0]![1]).toEqual([1])
+	})
+
+	it('returns 404 problem+json when the incoming video does not exist', async () => {
+		poolQuery.mockResolvedValue({ rows: [] })
+
+		const res = await request(app).delete('/videos/999').expect(404)
+
+		expect(res.headers['content-type']).toContain('application/problem+json')
+		expect(res.body).toMatchObject({ status: 404, title: 'Not Found', detail: 'Incoming video not found' })
+	})
+
+	it('rejects a non-numeric id with 422 problem+json', async () => {
+		const res = await request(app).delete('/videos/abc').expect(422)
+
+		expect(res.headers['content-type']).toContain('application/problem+json')
+		expect(res.body).toMatchObject({ status: 422, title: 'Unprocessable Entity', detail: 'Invalid video id' })
+		expect(poolQuery).not.toHaveBeenCalled()
+	})
+})
