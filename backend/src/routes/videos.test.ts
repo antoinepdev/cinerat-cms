@@ -1,6 +1,6 @@
 import request from 'supertest'
 import type { Mock } from 'vitest'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { pool } from '../database/index.ts'
 import type { IIncomingVideo } from '../entities/movie.ts'
@@ -18,8 +18,6 @@ const poolQuery = vi.mocked(pool).query as unknown as Mock<
 >
 
 describe('GET /videos/pending', () => {
-	beforeEach(() => poolQuery.mockReset())
-
 	it('returns the pending incoming videos', async () => {
 		poolQuery.mockResolvedValue({ rows: [] })
 
@@ -32,8 +30,6 @@ describe('GET /videos/pending', () => {
 })
 
 describe('DELETE /videos/:id', () => {
-	beforeEach(() => poolQuery.mockReset())
-
 	it('deletes an existing incoming video and returns 204', async () => {
 		poolQuery.mockResolvedValue({ rows: [{ id: 1 }] } as unknown as { rows: IIncomingVideo[] })
 

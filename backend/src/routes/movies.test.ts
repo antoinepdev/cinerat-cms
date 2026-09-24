@@ -1,6 +1,6 @@
-import type { Mock } from 'vitest'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
+import type { Mock } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { pool } from '../database/index.ts'
 import type { IMovie } from '../entities/movie.ts'
@@ -14,9 +14,7 @@ vi.mock('../provider/telegram.ts', () => ({
 	MOVIE_LISTENER_GROUP_ID: 222,
 }))
 
-const poolQuery = vi.mocked(pool).query as unknown as Mock<
-	(text: string, values?: unknown[]) => Promise<{ rows: IMovie[] }>
->
+const poolQuery = vi.mocked(pool).query as unknown as Mock<(text: string, values?: unknown[]) => Promise<{ rows: IMovie[] }>>
 const sendPhoto = vi.mocked(bot.sendPhoto) as unknown as Mock<(...args: unknown[]) => Promise<{ message_id: number }>>
 const copyMessage = vi.mocked(bot.copyMessage) as unknown as Mock<(...args: unknown[]) => Promise<{ message_id: number }>>
 
@@ -41,8 +39,6 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 }
 
 describe('GET /movies', () => {
-	beforeEach(() => poolQuery.mockReset())
-
 	it('returns the movies and forwards the filters down to the SQL query', async () => {
 		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
 
@@ -87,12 +83,6 @@ describe('POST /movies', () => {
 		catalog_version: 1,
 	}
 
-	beforeEach(() => {
-		poolQuery.mockReset()
-		sendPhoto.mockReset()
-		copyMessage.mockReset()
-	})
-
 	it('sends the poster and the movie to Telegram, saves the movie and returns 201', async () => {
 		sendPhoto.mockResolvedValue({ message_id: 500 })
 		copyMessage.mockResolvedValue({ message_id: 501 })
@@ -125,11 +115,7 @@ describe('POST /movies', () => {
 	})
 
 	it('rejects a malformed JSON body with 400 problem+json', async () => {
-		const res = await request(app)
-			.post('/movies')
-			.set('Content-Type', 'application/json')
-			.send('{not valid json')
-			.expect(400)
+		const res = await request(app).post('/movies').set('Content-Type', 'application/json').send('{not valid json').expect(400)
 
 		expect(res.headers['content-type']).toContain('application/problem+json')
 		expect(res.body).toMatchObject({ status: 400, title: 'Bad Request' })
@@ -137,11 +123,6 @@ describe('POST /movies', () => {
 })
 
 describe('PATCH /movies', () => {
-	beforeEach(() => {
-		poolQuery.mockReset()
-		copyMessage.mockReset()
-	})
-
 	it('adds a new audio file to an existing movie and returns 200', async () => {
 		copyMessage.mockResolvedValue({ message_id: 601 })
 		const updated = makeMovie({ telegram_file_id_cas: 601 })
@@ -150,10 +131,7 @@ describe('PATCH /movies', () => {
 			.mockResolvedValueOnce({ rows: [updated] }) // update the movie
 			.mockResolvedValueOnce({ rows: [makeMovie()] }) // mark incoming video as processed
 
-		const res = await request(app)
-			.patch('/movies')
-			.send({ tmdb_id: 19995, telegram_file_id_cas: 12 })
-			.expect(200)
+		const res = await request(app).patch('/movies').send({ tmdb_id: 19995, telegram_file_id_cas: 12 }).expect(200)
 
 		expect(res.body).toEqual(updated)
 		expect(copyMessage).toHaveBeenCalledTimes(1)
@@ -163,10 +141,7 @@ describe('PATCH /movies', () => {
 	it('returns 404 problem+json when the movie does not exist', async () => {
 		poolQuery.mockResolvedValue({ rows: [] })
 
-		const res = await request(app)
-			.patch('/movies')
-			.send({ tmdb_id: 999, telegram_file_id_lat: 12 })
-			.expect(404)
+		const res = await request(app).patch('/movies').send({ tmdb_id: 999, telegram_file_id_lat: 12 }).expect(404)
 
 		expect(res.body).toMatchObject({ status: 404, title: 'Not Found' })
 		expect(copyMessage).not.toHaveBeenCalled()
@@ -176,10 +151,7 @@ describe('PATCH /movies', () => {
 	it('returns 409 problem+json when the movie already has that audio', async () => {
 		poolQuery.mockResolvedValue({ rows: [makeMovie({ language_cas: true })] })
 
-		const res = await request(app)
-			.patch('/movies')
-			.send({ tmdb_id: 19995, telegram_file_id_cas: 12 })
-			.expect(409)
+		const res = await request(app).patch('/movies').send({ tmdb_id: 19995, telegram_file_id_cas: 12 }).expect(409)
 
 		expect(res.body).toMatchObject({ status: 409, title: 'Conflict', detail: 'Movie already has castellano audio' })
 		expect(copyMessage).not.toHaveBeenCalled()
