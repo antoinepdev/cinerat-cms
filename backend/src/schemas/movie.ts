@@ -35,7 +35,9 @@ const MovieFiltersSchema = z
 		catalog_version: z.coerce.number().int().optional(),
 		year: z.coerce.number().int().positive().optional(),
 		tmdb_id: z.coerce.number().int().positive().optional(),
-		sort_by: z.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id']).optional(),
+		sort_by: z
+			.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id', 'popularity'])
+			.optional(),
 	})
 	.strip()
 
