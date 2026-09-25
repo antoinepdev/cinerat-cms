@@ -57,13 +57,32 @@ describe('GET /movies', () => {
 		expect(res.body).toMatchObject({ status: 422, title: 'Unprocessable Entity', detail: 'Invalid query params' })
 	})
 
-	it('sorts the movies by popularity', async () => {
+	it('sorts by popularity descending by default', async () => {
 		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
 
 		const res = await request(app).get('/movies?sort_by=popularity').expect(200)
 
 		expect(res.body).toEqual([makeMovie()])
-		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity')
+		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity desc')
+	})
+
+	it.for(['asc', 'desc'])('sorts by popularity %s when requested', async (sort_direction) => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		await request(app).get(`/movies?sort_by=popularity&sort_direction=${sort_direction}`).expect(200)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain(`order by popularity ${sort_direction}`)
+	})
+
+	it('combines the sorting with the filters in the same query', async () => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		await request(app).get('/movies?catalog_name=kids&year=2020&sort_by=popularity&sort_direction=asc').expect(200)
+
+		expect(poolQuery.mock.calls[0]![0]).toContain('where catalog_name = $1 and year = $2')
+		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity asc')
+		expect(poolQuery.mock.calls[0]![1]).toEqual(['kids', 2020])
 	})
 
 	it('does not sort the movies when no sort_by is given', async () => {
@@ -72,6 +91,33 @@ describe('GET /movies', () => {
 		await request(app).get('/movies').expect(200)
 
 		expect(poolQuery.mock.calls[0]![0]).not.toContain('order by')
+	})
+
+	it.for(['sideways', 'DESC', 'ascending', 'desc%20asc'])(
+		'rejects the invalid sort_direction %s with 422 problem+json without touching the database',
+		async (sort_direction) => {
+			const res = await request(app).get(`/movies?sort_by=popularity&sort_direction=${sort_direction}`).expect(422)
+
+			expect(res.body).toMatchObject({ status: 422, detail: 'Invalid query params' })
+			expect(poolQuery).not.toHaveBeenCalled()
+		},
+	)
+
+	it('rejects a repeated sort_direction with 422 problem+json', async () => {
+		const res = await request(app).get('/movies?sort_by=popularity&sort_direction=asc&sort_direction=desc').expect(422)
+
+		expect(res.body).toMatchObject({ status: 422, detail: 'Invalid query params' })
+		expect(poolQuery).not.toHaveBeenCalled()
+	})
+
+	it('rejects sort_direction without sort_by with 422 problem+json', async () => {
+		const res = await request(app).get('/movies?sort_direction=desc').expect(422)
+
+		expect(res.body).toMatchObject({
+			status: 422,
+			detail: 'If you use sort_direction filter you need also specify sort_by filter',
+		})
+		expect(poolQuery).not.toHaveBeenCalled()
 	})
 
 	it('rejects catalog_version without catalog_name with 422 problem+json', async () => {
