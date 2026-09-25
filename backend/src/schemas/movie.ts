@@ -38,6 +38,7 @@ const MovieFiltersSchema = z
 		sort_by: z
 			.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id', 'popularity'])
 			.optional(),
+		sort_direction: z.enum(['asc', 'desc']).optional(),
 	})
 	.strip()
 
