@@ -58,12 +58,13 @@ describe('movieRepository', () => {
 	it('getMovies appends filters as numbered parameters in code order', async () => {
 		mockRows([])
 
-		await movieRepository.getMovies({ catalog_name: 'kids', year: 2020, sort_by: 'title_en' })
+		await movieRepository.getMovies({ catalog_name: 'kids', year: 2020, sort_by: 'title_en', sort_direction: 'asc' })
 
 		expect(poolQuery).toHaveBeenCalledTimes(1)
 		const sql = poolQuery.mock.calls[0]![0]
 		expect(sql).toContain('where catalog_name = $1 and year = $2')
-		expect(sql).toContain('order by title_en')
+		expect(sql).toContain('order by title_en asc')
+		expect(sql.indexOf('where')).toBeLessThan(sql.indexOf('order by'))
 		expect(poolQuery.mock.calls[0]![1]).toEqual(['kids', 2020])
 	})
 
@@ -76,14 +77,38 @@ describe('movieRepository', () => {
 		'language_lat',
 		'id',
 		'popularity',
-	])('getMovies orders by %s', async (sort_by) => {
+	])('getMovies orders by %s descending when no sort_direction is given', async (sort_by) => {
 		mockRows([])
 
 		await movieRepository.getMovies({ sort_by })
 
 		expect(poolQuery).toHaveBeenCalledTimes(1)
-		expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by}`)
+		expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by} desc`)
 	})
+
+	it.for<NonNullable<IMovieFilters['sort_direction']>>(['asc', 'desc'])(
+		'getMovies orders popularity %s when asked for it',
+		async (sort_direction) => {
+			mockRows([])
+
+			await movieRepository.getMovies({ sort_by: 'popularity', sort_direction })
+
+			expect(poolQuery).toHaveBeenCalledTimes(1)
+			expect(poolQuery.mock.calls[0]![0]).toContain(`order by popularity ${sort_direction}`)
+		},
+	)
+
+	it.for<NonNullable<IMovieFilters['sort_by']>>(['title_en', 'id', 'popularity'])(
+		'getMovies orders %s asc when sort_direction is asc',
+		async (sort_by) => {
+			mockRows([])
+
+			await movieRepository.getMovies({ sort_by, sort_direction: 'asc' })
+
+			expect(poolQuery).toHaveBeenCalledTimes(1)
+			expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by} asc`)
+		},
+	)
 
 	it('getMovies returns the rows in the order given by the database', async () => {
 		const movies = [makeMovie({ id: 1, popularity: 5 }), makeMovie({ id: 2, popularity: 500 })]
@@ -92,6 +117,15 @@ describe('movieRepository', () => {
 		const result = await movieRepository.getMovies({ sort_by: 'popularity' })
 
 		expect(result).toEqual(movies)
+	})
+
+	it('getMovies leaves the order by clause empty when only sort_direction is given', async () => {
+		mockRows([])
+
+		await movieRepository.getMovies({ sort_direction: 'desc' } as IMovieFilters)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).not.toContain('order by')
 	})
 
 	it.for(['duration', 'title_en; DROP TABLE movies--'])(
@@ -106,6 +140,40 @@ describe('movieRepository', () => {
 			expect(sql).not.toContain('order by')
 		},
 	)
+
+	it.for(['asc; DROP TABLE movies--', 'DESC', 'descending', 'up', 'desc asc'])(
+		'getMovies never interpolates the invalid sort_direction %s and falls back to desc',
+		async (sort_direction) => {
+			mockRows([])
+
+			await movieRepository.getMovies({ sort_by: 'popularity', sort_direction } as unknown as IMovieFilters)
+
+			expect(poolQuery).toHaveBeenCalledTimes(1)
+			const sql = poolQuery.mock.calls[0]![0]
+			expect(sql).not.toContain(sort_direction)
+			expect(sql).toContain('order by popularity desc')
+		},
+	)
+
+	it('getMovies falls back to desc when sort_direction is empty', async () => {
+		mockRows([])
+
+		await movieRepository.getMovies({ sort_by: 'popularity', sort_direction: '' } as unknown as IMovieFilters)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity desc')
+	})
+
+	it('getMovies keeps the order by clause free of a direction word when sort_by is invalid', async () => {
+		mockRows([])
+
+		await movieRepository.getMovies({ sort_by: 'duration', sort_direction: 'asc' } as unknown as IMovieFilters)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		const sql = poolQuery.mock.calls[0]![0]
+		expect(sql).not.toContain('order by')
+		expect(sql).not.toContain('asc')
+	})
 
 	it('saveMovie inserts every field in column order and returns the saved row', async () => {
 		const movie = makeMovie()
