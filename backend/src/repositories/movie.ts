@@ -10,6 +10,7 @@ const SORT_COLUMNS = {
 	language_cas: 'language_cas',
 	language_lat: 'language_lat',
 	id: 'id',
+	popularity: 'popularity',
 } as const
 
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
