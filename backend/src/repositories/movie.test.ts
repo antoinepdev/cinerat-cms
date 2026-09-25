@@ -67,6 +67,33 @@ describe('movieRepository', () => {
 		expect(poolQuery.mock.calls[0]![1]).toEqual(['kids', 2020])
 	})
 
+	it.for<NonNullable<IMovieFilters['sort_by']>>([
+		'title_en',
+		'title_cas',
+		'title_lat',
+		'year',
+		'language_cas',
+		'language_lat',
+		'id',
+		'popularity',
+	])('getMovies orders by %s', async (sort_by) => {
+		mockRows([])
+
+		await movieRepository.getMovies({ sort_by })
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by}`)
+	})
+
+	it('getMovies returns the rows in the order given by the database', async () => {
+		const movies = [makeMovie({ id: 1, popularity: 5 }), makeMovie({ id: 2, popularity: 500 })]
+		mockRows(movies)
+
+		const result = await movieRepository.getMovies({ sort_by: 'popularity' })
+
+		expect(result).toEqual(movies)
+	})
+
 	it.for(['duration', 'title_en; DROP TABLE movies--'])(
 		'getMovies leaves the order by clause empty for invalid sort_by %s',
 		async (sort_by) => {
