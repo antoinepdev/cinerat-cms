@@ -47,6 +47,46 @@ describe('validateGetMoviesQueryParams', () => {
 		expect(next).toHaveBeenCalled()
 	})
 
+	it.for<NonNullable<IMovieFilters['sort_direction']>>(['asc', 'desc'])(
+		'passes sort_by popularity with sort_direction %s',
+		async (sort_direction) => {
+			const req = { query: { sort_by: 'popularity', sort_direction } } as unknown as Request
+			const next = vi.fn()
+
+			await validateGetMoviesQueryParams(req, {} as Response, next)
+
+			expect(req.filteredQuery).toEqual({ sort_by: 'popularity', sort_direction })
+			expect(next).toHaveBeenCalled()
+		},
+	)
+
+	it('keeps the rest of the filters alongside the sorting ones', async () => {
+		const query = { catalog_name: 'standard', catalog_version: '5', year: '2020', sort_by: 'popularity', sort_direction: 'asc' }
+		const req = { query } as unknown as Request
+		const next = vi.fn()
+
+		await validateGetMoviesQueryParams(req, {} as Response, next)
+
+		expect(req.filteredQuery).toEqual({
+			catalog_name: 'standard',
+			catalog_version: 5,
+			year: 2020,
+			sort_by: 'popularity',
+			sort_direction: 'asc',
+		})
+		expect(next).toHaveBeenCalled()
+	})
+
+	it('drops unknown params so they can never act as a sort_direction', async () => {
+		const req = { query: { sort_by: 'popularity', order: 'asc', sortDirection: 'asc' } } as unknown as Request
+		const next = vi.fn()
+
+		await validateGetMoviesQueryParams(req, {} as Response, next)
+
+		expect(req.filteredQuery).toEqual({ sort_by: 'popularity' })
+		expect(next).toHaveBeenCalled()
+	})
+
 	it.for<{ name: string; query: unknown; message: string }>([
 		{
 			name: 'catalog_version without catalog_name',
@@ -61,6 +101,36 @@ describe('validateGetMoviesQueryParams', () => {
 		{
 			name: 'a non-numeric year',
 			query: { year: 'abc' },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'sort_direction without sort_by',
+			query: { sort_direction: 'desc' },
+			message: 'If you use sort_direction filter you need also specify sort_by filter',
+		},
+		{
+			name: 'an unknown sort_direction',
+			query: { sort_by: 'popularity', sort_direction: 'sideways' },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'an uppercase sort_direction',
+			query: { sort_by: 'popularity', sort_direction: 'DESC' },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'an empty sort_direction',
+			query: { sort_by: 'popularity', sort_direction: '' },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'a numeric sort_direction',
+			query: { sort_by: 'popularity', sort_direction: 1 },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'a repeated sort_direction',
+			query: { sort_by: 'popularity', sort_direction: ['asc', 'desc'] },
 			message: 'Invalid query params',
 		},
 		{
