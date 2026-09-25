@@ -13,6 +13,13 @@ const SORT_COLUMNS = {
 	popularity: 'popularity',
 } as const
 
+const SORT_DIRECTIONS = {
+	asc: 'asc',
+	desc: 'desc',
+} as const
+
+const DEFAULT_SORT_DIRECTION = 'desc'
+
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
 		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres from movies'
@@ -41,7 +48,8 @@ async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 
 	const whereClause = conditions.length > 0 ? ` where ${conditions.join(' and ')}` : ''
 	const sortBy = filters?.sort_by ? SORT_COLUMNS[filters.sort_by] : undefined
-	const orderByClause = sortBy ? ` order by ${sortBy}` : ''
+	const sortDirection = filters?.sort_direction ? SORT_DIRECTIONS[filters.sort_direction] : undefined
+	const orderByClause = sortBy ? ` order by ${sortBy} ${sortDirection ?? DEFAULT_SORT_DIRECTION}` : ''
 	const queryWithFilters = baseQuery + whereClause + orderByClause
 
 	const result = await pool.query(queryWithFilters, values)
