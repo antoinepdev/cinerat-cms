@@ -18,5 +18,10 @@ export async function validateGetMoviesQueryParams(req: Request, _res: Response,
 		if (!query?.catalog_name)
 			throw new ValidationError('If you use catalog_version filter you need also specify catalog_name filter')
 	}
+
+	if (query?.sort_direction) {
+		if (!query?.sort_by) throw new ValidationError('If you use sort_direction filter you need also specify sort_by filter')
+	}
+
 	next()
 }
