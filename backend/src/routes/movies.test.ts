@@ -57,6 +57,23 @@ describe('GET /movies', () => {
 		expect(res.body).toMatchObject({ status: 422, title: 'Unprocessable Entity', detail: 'Invalid query params' })
 	})
 
+	it('sorts the movies by popularity', async () => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		const res = await request(app).get('/movies?sort_by=popularity').expect(200)
+
+		expect(res.body).toEqual([makeMovie()])
+		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity')
+	})
+
+	it('does not sort the movies when no sort_by is given', async () => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		await request(app).get('/movies').expect(200)
+
+		expect(poolQuery.mock.calls[0]![0]).not.toContain('order by')
+	})
+
 	it('rejects catalog_version without catalog_name with 422 problem+json', async () => {
 		const res = await request(app).get('/movies?catalog_version=1').expect(422)
 
