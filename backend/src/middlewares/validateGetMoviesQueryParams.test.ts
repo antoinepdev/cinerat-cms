@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { describe, expect, it, vi } from 'vitest'
+import type { IMovieFilters } from '../schemas/movie.ts'
 import { ValidationError } from '../utils/errors.ts'
 import { validateGetMoviesQueryParams } from './validateGetMoviesQueryParams.ts'
 
@@ -27,6 +28,25 @@ describe('validateGetMoviesQueryParams', () => {
 		expect(next).toHaveBeenCalled()
 	})
 
+	it.for<NonNullable<IMovieFilters['sort_by']>>([
+		'title_en',
+		'title_cas',
+		'title_lat',
+		'year',
+		'language_cas',
+		'language_lat',
+		'id',
+		'popularity',
+	])('passes sort_by %s', async (sort_by) => {
+		const req = { query: { sort_by } } as unknown as Request
+		const next = vi.fn()
+
+		await validateGetMoviesQueryParams(req, {} as Response, next)
+
+		expect(req.filteredQuery).toEqual({ sort_by })
+		expect(next).toHaveBeenCalled()
+	})
+
 	it.for<{ name: string; query: unknown; message: string }>([
 		{
 			name: 'catalog_version without catalog_name',
@@ -41,6 +61,11 @@ describe('validateGetMoviesQueryParams', () => {
 		{
 			name: 'a non-numeric year',
 			query: { year: 'abc' },
+			message: 'Invalid query params',
+		},
+		{
+			name: 'a repeated sort_by',
+			query: { sort_by: ['popularity', 'title_en'] },
 			message: 'Invalid query params',
 		},
 	])('rejects $name', async ({ query, message }) => {
