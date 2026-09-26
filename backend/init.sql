@@ -28,4 +28,4 @@ CREATE TABLE incoming_videos (
     caption TEXT NOT NULL,
     language TEXT NOT NULL CHECK (language IN ('latino', 'castellano')),
     is_processed BOOLEAN DEFAULT FALSE
-)
+);
