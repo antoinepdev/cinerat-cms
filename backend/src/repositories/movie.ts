@@ -11,6 +11,8 @@ const SORT_COLUMNS = {
 	language_lat: 'language_lat',
 	id: 'id',
 	popularity: 'popularity',
+	created_at: 'created_at',
+	updated_at: 'updated_at',
 } as const
 
 const SORT_DIRECTIONS = {
@@ -22,7 +24,7 @@ const DEFAULT_SORT_DIRECTION = 'desc'
 
 async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 	const baseQuery =
-		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres from movies'
+		'SELECT id, title_en, title_cas, title_lat, year, language_cas, language_lat, catalog_name, catalog_version, poster, description, tmdb_id, popularity, backdrop_path, genres, created_at, updated_at from movies'
 
 	const conditions: string[] = []
 	const values: unknown[] = []
@@ -57,7 +59,7 @@ async function getMovies(filters: IMovieFilters): Promise<IMovie[]> {
 }
 
 async function saveMovie(data: IMovieToSave): Promise<IMovie> {
-	const query = ` INSERT INTO movies ( title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres `
+	const query = ` INSERT INTO movies ( title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres, created_at, updated_at `
 	const values = [
 		data.title_en,
 		data.title_cas,
@@ -102,7 +104,7 @@ async function updateMovie(data: IMovieToUpdateParams): Promise<IMovie | undefin
 	values.push(data.tmdb_id)
 
 	const result = await pool.query(
-		`UPDATE movies SET ${setClauses.join(', ')} WHERE tmdb_id = $${values.length} RETURNING id, title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres`,
+		`UPDATE movies SET ${setClauses.join(', ')} WHERE tmdb_id = $${values.length} RETURNING id, title_en, title_cas, title_lat, year, poster, language_cas, language_lat, quality, description, telegram_file_id_cas, telegram_file_id_lat, telegram_poster_id, catalog_name, catalog_version, tmdb_id, popularity, backdrop_path, genres, created_at, updated_at`,
 		values,
 	)
 	return result.rows[0]
