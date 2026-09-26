@@ -36,7 +36,18 @@ const MovieFiltersSchema = z
 		year: z.coerce.number().int().positive().optional(),
 		tmdb_id: z.coerce.number().int().positive().optional(),
 		sort_by: z
-			.enum(['title_en', 'title_cas', 'title_lat', 'year', 'language_cas', 'language_lat', 'id', 'popularity'])
+			.enum([
+				'title_en',
+				'title_cas',
+				'title_lat',
+				'year',
+				'language_cas',
+				'language_lat',
+				'id',
+				'popularity',
+				'created_at',
+				'updated_at',
+			])
 			.optional(),
 		sort_direction: z.enum(['asc', 'desc']).optional(),
 	})
