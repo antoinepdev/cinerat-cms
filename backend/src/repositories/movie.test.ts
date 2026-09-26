@@ -8,6 +8,9 @@ vi.mock('../database/index.ts', () => ({ pool: { query: vi.fn() } }))
 
 const poolQuery = vi.mocked(pool).query as unknown as Mock<(text: string, values?: unknown[]) => Promise<{ rows: IMovie[] }>>
 
+const CREATED_AT = new Date('2026-01-15T10:00:00.000Z')
+const UPDATED_AT = new Date('2026-02-20T18:30:00.000Z')
+
 function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 	return {
 		id: 1,
@@ -28,12 +31,14 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 		popularity: 100,
 		backdrop_path: 'https://example.com/backdrop.jpg',
 		genres: ['Action', 'Adventure'],
+		created_at: CREATED_AT,
+		updated_at: UPDATED_AT,
 		...overrides,
 	}
 }
 
 function makeMovieToSave(overrides: Partial<IMovieToSave> = {}): IMovieToSave {
-	const { id, ...toSave } = makeMovie()
+	const { id, created_at, updated_at, ...toSave } = makeMovie()
 	return { ...toSave, ...overrides }
 }
 
@@ -77,6 +82,8 @@ describe('movieRepository', () => {
 		'language_lat',
 		'id',
 		'popularity',
+		'created_at',
+		'updated_at',
 	])('getMovies orders by %s descending when no sort_direction is given', async (sort_by) => {
 		mockRows([])
 
@@ -98,7 +105,7 @@ describe('movieRepository', () => {
 		},
 	)
 
-	it.for<NonNullable<IMovieFilters['sort_by']>>(['title_en', 'id', 'popularity'])(
+	it.for<NonNullable<IMovieFilters['sort_by']>>(['title_en', 'id', 'popularity', 'created_at'])(
 		'getMovies orders %s asc when sort_direction is asc',
 		async (sort_by) => {
 			mockRows([])
@@ -109,6 +116,17 @@ describe('movieRepository', () => {
 			expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by} asc`)
 		},
 	)
+
+	it.for(['created_at', 'updated_at'])('getMovies projects the %s column', async (column) => {
+		mockRows([])
+
+		await movieRepository.getMovies({})
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		const [projection, rest] = poolQuery.mock.calls[0]![0].split(' from ')
+		expect(rest).toBe('movies')
+		expect(projection).toContain(column)
+	})
 
 	it('getMovies returns the rows in the order given by the database', async () => {
 		const movies = [makeMovie({ id: 1, popularity: 5 }), makeMovie({ id: 2, popularity: 500 })]
@@ -150,7 +168,7 @@ describe('movieRepository', () => {
 
 			expect(poolQuery).toHaveBeenCalledTimes(1)
 			const sql = poolQuery.mock.calls[0]![0]
-			expect(sql).not.toContain(sort_direction)
+			expect(sql.slice(sql.indexOf('order by'))).not.toContain(sort_direction)
 			expect(sql).toContain('order by popularity desc')
 		},
 	)
@@ -203,6 +221,35 @@ describe('movieRepository', () => {
 			['Action', 'Adventure'],
 		])
 		expect(result).toEqual(movie)
+	})
+
+	it.for(['created_at', 'updated_at'])('saveMovie returns the %s column filled by the database', async (column) => {
+		mockRows([makeMovie()])
+
+		await movieRepository.saveMovie(makeMovieToSave())
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toMatch(new RegExp(`RETURNING [\\s\\S]*${column}[\\s\\S]*$`))
+	})
+
+	it('saveMovie leaves the timestamps out of the insert so the database fills them', async () => {
+		mockRows([makeMovie()])
+
+		await movieRepository.saveMovie(makeMovieToSave())
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		const insertedColumns = poolQuery.mock.calls[0]![0].slice(0, poolQuery.mock.calls[0]![0].indexOf(') VALUES'))
+		expect(insertedColumns).not.toContain('created_at')
+		expect(insertedColumns).not.toContain('updated_at')
+	})
+
+	it.for(['created_at', 'updated_at'])('updateMovie returns the %s column', async (column) => {
+		mockRows([makeMovie()])
+
+		await movieRepository.updateMovie({ tmdb_id: 19995, telegram_file_id_cas: 111 })
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toMatch(new RegExp(`RETURNING [\\s\\S]*${column}[\\s\\S]*$`))
 	})
 
 	it('updateMovie sets only the castellano fields when only cas is provided', async () => {
