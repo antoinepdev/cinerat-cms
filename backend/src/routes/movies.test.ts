@@ -18,6 +18,9 @@ const poolQuery = vi.mocked(pool).query as unknown as Mock<(text: string, values
 const sendPhoto = vi.mocked(bot.sendPhoto) as unknown as Mock<(...args: unknown[]) => Promise<{ message_id: number }>>
 const copyMessage = vi.mocked(bot.copyMessage) as unknown as Mock<(...args: unknown[]) => Promise<{ message_id: number }>>
 
+const CREATED_AT = new Date('2026-01-15T10:00:00.000Z')
+const UPDATED_AT = new Date('2026-02-20T18:30:00.000Z')
+
 function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 	return {
 		id: 1,
@@ -34,8 +37,15 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 		telegram_poster_id: 500,
 		catalog_name: 'test-catalog',
 		catalog_version: 1,
+		created_at: CREATED_AT,
+		updated_at: UPDATED_AT,
 		...overrides,
 	}
+}
+
+// res.json() serializes the Dates that the pg driver returns into ISO 8601 strings
+function toMovieJson(movie: IMovie) {
+	return { ...movie, created_at: movie.created_at.toISOString(), updated_at: movie.updated_at.toISOString() }
 }
 
 describe('GET /movies', () => {
@@ -44,7 +54,7 @@ describe('GET /movies', () => {
 
 		const res = await request(app).get('/movies?catalog_name=kids').expect(200)
 
-		expect(res.body).toEqual([makeMovie()])
+		expect(res.body).toEqual([toMovieJson(makeMovie())])
 		expect(poolQuery).toHaveBeenCalledTimes(1)
 		expect(poolQuery.mock.calls[0]![0]).toContain('where catalog_name = $1')
 		expect(poolQuery.mock.calls[0]![1]).toEqual(['kids'])
@@ -62,7 +72,7 @@ describe('GET /movies', () => {
 
 		const res = await request(app).get('/movies?sort_by=popularity').expect(200)
 
-		expect(res.body).toEqual([makeMovie()])
+		expect(res.body).toEqual([toMovieJson(makeMovie())])
 		expect(poolQuery.mock.calls[0]![0]).toContain('order by popularity desc')
 	})
 
@@ -73,6 +83,44 @@ describe('GET /movies', () => {
 
 		expect(poolQuery).toHaveBeenCalledTimes(1)
 		expect(poolQuery.mock.calls[0]![0]).toContain(`order by popularity ${sort_direction}`)
+	})
+
+	it.for(['created_at', 'updated_at'])('sorts by %s descending by default over http', async (sort_by) => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		await request(app).get(`/movies?sort_by=${sort_by}`).expect(200)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by} desc`)
+	})
+
+	it.for(['created_at', 'updated_at'])('sorts by %s asc when requested over http', async (sort_by) => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		await request(app).get(`/movies?sort_by=${sort_by}&sort_direction=asc`).expect(200)
+
+		expect(poolQuery).toHaveBeenCalledTimes(1)
+		expect(poolQuery.mock.calls[0]![0]).toContain(`order by ${sort_by} asc`)
+	})
+
+	it.for(['created_at', 'updated_at'] as const)('serializes the %s timestamp as ISO 8601 in UTC', async (column) => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		const res = await request(app).get('/movies').expect(200)
+
+		expect(res.body[0][column]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+		expect(res.body[0][column]).toBe(toMovieJson(makeMovie())[column])
+	})
+
+	it('returns the creation and modification timestamps of every movie', async () => {
+		poolQuery.mockResolvedValue({ rows: [makeMovie()] })
+
+		const res = await request(app).get('/movies').expect(200)
+
+		expect(res.body[0]).toMatchObject({
+			created_at: CREATED_AT.toISOString(),
+			updated_at: UPDATED_AT.toISOString(),
+		})
 	})
 
 	it('combines the sorting with the filters in the same query', async () => {
@@ -155,7 +203,7 @@ describe('POST /movies', () => {
 
 		const res = await request(app).post('/movies').send(validBody).expect(201)
 
-		expect(res.body).toEqual(makeMovie())
+		expect(res.body).toEqual(toMovieJson(makeMovie()))
 		expect(sendPhoto).toHaveBeenCalledTimes(1)
 		expect(sendPhoto).toHaveBeenCalledWith(MOVIE_CONTAINER_GROUP_ID, validBody.poster, expect.any(Object))
 		expect(copyMessage).toHaveBeenCalledTimes(1)
@@ -196,7 +244,7 @@ describe('PATCH /movies', () => {
 
 		const res = await request(app).patch('/movies').send({ tmdb_id: 19995, telegram_file_id_cas: 12 }).expect(200)
 
-		expect(res.body).toEqual(updated)
+		expect(res.body).toEqual(toMovieJson(updated))
 		expect(copyMessage).toHaveBeenCalledTimes(1)
 		expect(poolQuery).toHaveBeenCalledTimes(3)
 	})
