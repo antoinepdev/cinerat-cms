@@ -37,6 +37,8 @@ describe('validateGetMoviesQueryParams', () => {
 		'language_lat',
 		'id',
 		'popularity',
+		'created_at',
+		'updated_at',
 	])('passes sort_by %s', async (sort_by) => {
 		const req = { query: { sort_by } } as unknown as Request
 		const next = vi.fn()
