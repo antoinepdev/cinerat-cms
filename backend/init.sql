@@ -18,9 +18,21 @@ CREATE TABLE movies (
     tmdb_id INT NOT NULL UNIQUE,
     popularity FLOAT NOT NULL,
     backdrop_path TEXT NOT NULL UNIQUE CHECK ( backdrop_path ~ '^https:\/\/.+' ),
-    genres TEXT[] NOT NULL
+    genres TEXT[] NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-)
+CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER movies_set_updated_at
+BEFORE UPDATE ON movies
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TABLE incoming_videos (
     id SERIAL PRIMARY KEY,
