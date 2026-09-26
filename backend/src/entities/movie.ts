@@ -10,4 +10,6 @@ export interface IMovieToSave extends IMovieInput {
 
 export interface IMovie extends IMovieToSave {
 	id: number
+	created_at: Date
+	updated_at: Date
 }
