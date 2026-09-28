@@ -15,6 +15,27 @@ describe('getLanguage', () => {
 	})
 
 	it.for<{ word: string; expected: string }>([
+		{ word: '𝐂𝐚𝐬𝐭𝐞𝐥𝐥𝐚𝐧𝐨', expected: 'castellano' },
+		{ word: '𝐥𝐚𝐭𝐢𝐧𝐨', expected: 'latino' },
+		{ word: '𝕔𝕒𝕤', expected: 'castellano' },
+		{ word: '🇪🇦', expected: 'castellano' },
+		{ word: '🇲🇪', expected: 'latino' },
+	])('returns $expected when text contains the stylized or regional variant $word', async ({ word, expected }) => {
+		const result = await getLanguage(`Juan de los muertos ${word}`)
+		expect(result).toBe(expected)
+	})
+
+	it('returns castellano for a real caption with math-bold text and the 🇪🇦 flag', async () => {
+		const caption = '⭐️Bohemian Rhapsody: La Historia de Freddie Mercury / Bohemian Rhapsody (2018)\n📀 𝐈𝐝𝐢𝐨𝐦𝐚: 𝐂𝐚𝐬𝐭𝐞𝐥𝐥𝐚𝐧𝐨 🇪🇦 彡'
+		expect(await getLanguage(caption)).toBe('castellano')
+	})
+
+	it('returns latino for a real caption with math-bold text and the 🇲🇪 flag', async () => {
+		const caption = '📀 𝐈𝐝𝐢𝐨𝐦𝐚: 𝐥𝐚𝐭𝐢𝐧𝐨 🇲🇪'
+		expect(await getLanguage(caption)).toBe('latino')
+	})
+
+	it.for<{ word: string; expected: string }>([
 		{ word: 'LATino', expected: 'latino' },
 		{ word: 'LAT', expected: 'latino' },
 		{ word: 'CaSTELLANO', expected: 'castellano' },
