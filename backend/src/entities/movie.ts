@@ -1,8 +1,4 @@
-import type { IIncomingVideoInput, IMovieInput } from '../schemas/movie.ts'
-
-export interface IIncomingVideo extends IIncomingVideoInput {
-	id: number
-}
+import type { IMovieInput } from '../schemas/movie.ts'
 
 export interface IMovieToSave extends IMovieInput {
 	telegram_poster_id: number

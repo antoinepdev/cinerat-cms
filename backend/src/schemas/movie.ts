@@ -22,13 +22,6 @@ const MovieSchema = z
 	})
 	.strip()
 
-const IncomingVideoSchema = z.object({
-	telegram_message_id: z.number().int().positive(),
-	caption: z.string(),
-	language: z.enum(['latino', 'castellano']),
-	is_processed: z.boolean(),
-})
-
 const MovieFiltersSchema = z
 	.object({
 		catalog_name: z.string().optional(),
@@ -62,7 +55,6 @@ const MovieToUpdateParamsSchema = z
 	.strip()
 
 export type IMovieInput = z.infer<typeof MovieSchema>
-export type IIncomingVideoInput = z.infer<typeof IncomingVideoSchema>
 export type IMovieFilters = z.infer<typeof MovieFiltersSchema>
 export type IMovieToUpdateParams = z.infer<typeof MovieToUpdateParamsSchema>
 

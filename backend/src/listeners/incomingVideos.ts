@@ -2,7 +2,7 @@ import type TelegramBot from 'node-telegram-bot-api'
 import { cleanText } from '../helpers/cleanText.ts'
 import { getLanguage } from '../helpers/getLanguage.ts'
 import { toPascalCase } from '../helpers/toPascalCase.ts'
-import type { IIncomingVideoInput } from '../schemas/movie.ts'
+import type { IIncomingVideoInput } from '../schemas/incomingVideo.ts'
 
 interface IncomingVideoListenerDeps {
 	bot: { on: (event: 'video', callback: (msg: TelegramBot.Message) => void) => void }

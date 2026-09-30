@@ -1,17 +1,50 @@
 import { pool } from '../database/index.ts'
-import type { IIncomingVideo } from '../entities/movie.ts'
-import type { IIncomingVideoInput } from '../schemas/movie.ts'
+import type { IIncomingVideo } from '../entities/incomingVideo.ts'
+import type { IIncomingVideoFilters, IIncomingVideoInput } from '../schemas/incomingVideo.ts'
 
-async function getPendingVideos(): Promise<IIncomingVideo[]> {
-	const query = 'SELECT * FROM incoming_videos WHERE is_processed = false'
-	const result = await pool.query(query)
+const SORT_COLUMNS = {
+	id: 'id',
+	created_at: 'created_at',
+	updated_at: 'updated_at',
+} as const
+
+const SORT_DIRECTIONS = {
+	asc: 'asc',
+	desc: 'desc',
+} as const
+
+const DEFAULT_SORT_COLUMN = 'id'
+const DEFAULT_SORT_DIRECTION = 'desc'
+
+const COLUMNS = 'id, telegram_message_id, caption, language, is_processed, created_at, updated_at'
+
+async function getVideos(filters: IIncomingVideoFilters): Promise<IIncomingVideo[]> {
+	const values: unknown[] = []
+	const conditions: string[] = []
+
+	if (filters) {
+		if (filters.is_processed !== undefined) {
+			values.push(filters.is_processed)
+			conditions.push(`is_processed = $${values.length}`)
+		}
+	}
+
+	const whereClause = conditions.length > 0 ? ` where ${conditions.join(' and ')}` : ''
+	const sortBy = filters?.sort_by ? SORT_COLUMNS[filters.sort_by] : undefined
+	const sortDirection = filters?.sort_direction ? SORT_DIRECTIONS[filters.sort_direction] : undefined
+	const orderByClause = sortBy
+		? ` order by ${sortBy} ${sortDirection ?? DEFAULT_SORT_DIRECTION}`
+		: ` order by ${DEFAULT_SORT_COLUMN}`
+
+	const result = await pool.query(`SELECT ${COLUMNS} from incoming_videos${whereClause}${orderByClause}`, values)
 	return result.rows
 }
 
 async function markVideoAsProcessed(telegramMessageId: number) {
-	const result = await pool.query('UPDATE incoming_videos SET is_processed = true WHERE telegram_message_id = $1 RETURNING *', [
-		telegramMessageId,
-	])
+	const result = await pool.query(
+		`UPDATE incoming_videos SET is_processed = true WHERE telegram_message_id = $1 RETURNING ${COLUMNS}`,
+		[telegramMessageId],
+	)
 	return result.rows[0]
 }
 
@@ -28,7 +61,7 @@ async function deleteIncomingVideo(id: number): Promise<{ id: number } | undefin
 }
 
 const videosRepository = {
-	getPendingVideos,
+	getVideos,
 	markVideoAsProcessed,
 	saveIncomingVideo,
 	deleteIncomingVideo,
