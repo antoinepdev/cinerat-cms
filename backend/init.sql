@@ -39,5 +39,11 @@ CREATE TABLE incoming_videos (
     telegram_message_id INT NOT NULL UNIQUE,
     caption TEXT NOT NULL,
     language TEXT NOT NULL CHECK (language IN ('latino', 'castellano')),
-    is_processed BOOLEAN DEFAULT FALSE
+    is_processed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TRIGGER incoming_videos_set_updated_at
+BEFORE UPDATE ON incoming_videos
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
