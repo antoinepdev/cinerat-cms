@@ -43,7 +43,6 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 	}
 }
 
-// res.json() serializes the Dates that the pg driver returns into ISO 8601 strings
 function toMovieJson(movie: IMovie) {
 	return { ...movie, created_at: movie.created_at.toISOString(), updated_at: movie.updated_at.toISOString() }
 }
