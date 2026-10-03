@@ -27,6 +27,8 @@
 	"scripts": {
 		"dev": "node --watch --env-file .dev.env ./src/index.ts",
 		"prod": "node --env-file .env ./src/index.ts",
-		"test": "vitest"
+		"test": "vitest",
+		"db:backup": "./scripts/backup-db.sh",
+		"db:sync": "./scripts/sync-dev-db.sh"
 	}
 }
