@@ -47,3 +47,56 @@ CREATE TABLE incoming_videos (
 CREATE TRIGGER incoming_videos_set_updated_at
 BEFORE UPDATE ON incoming_videos
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE series (
+    id SERIAL PRIMARY KEY,
+    title_en TEXT NOT NULL,
+    title_cas TEXT,
+    title_lat TEXT,
+    year SMALLINT NOT NULL CHECK ( year > 1900 AND year <= 2026),
+    tmdb_id INT NOT NULL UNIQUE,
+    poster TEXT NOT NULL,
+    backdrop_path TEXT NOT NULL,
+    description TEXT NOT NULL,
+    popularity FLOAT NOT NULL,
+    genres TEXT[] NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER series_set_updated_at
+BEFORE UPDATE ON series
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE episodes (
+    id SERIAL PRIMARY KEY,
+    series_id INT NOT NULL REFERENCES series (id),
+    episode_number SMALLINT NOT NULL CHECK ( episode_number > 0 ),
+    season SMALLINT NOT NULL CHECK ( season > 0 ),
+    telegram_file_id_cas INT UNIQUE,
+    telegram_file_id_lat INT UNIQUE,
+    language_cas BOOLEAN NOT NULL DEFAULT FALSE,
+    language_lat BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE ( series_id, season, episode_number )
+);
+
+CREATE TRIGGER episodes_set_updated_at
+BEFORE UPDATE ON episodes
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE incoming_episodes (
+    id SERIAL PRIMARY KEY,
+    message_id INT NOT NULL UNIQUE,
+    caption TEXT NOT NULL,
+    episode_number SMALLINT NOT NULL CHECK ( episode_number > 0 ),
+    season SMALLINT NOT NULL CHECK ( season > 0 ),
+    is_processed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TRIGGER incoming_episodes_set_updated_at
+BEFORE UPDATE ON incoming_episodes
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
