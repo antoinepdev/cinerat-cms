@@ -7,7 +7,7 @@ import { seriesRepository } from '../repositories/series.ts'
 import { NotFoundError } from '../utils/errors.ts'
 import { telegramService } from './telegram.ts'
 
-interface ISaveSeriesWithEpisodesParams {
+export interface ISaveSeriesWithEpisodesParams {
 	episodesToSave: IEpisodeToSave[]
 	series: ISeriesToSave
 }
