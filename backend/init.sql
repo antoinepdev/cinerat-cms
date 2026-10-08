@@ -93,6 +93,8 @@ CREATE TABLE incoming_episodes (
     episode_number SMALLINT NOT NULL CHECK ( episode_number > 0 ),
     season SMALLINT NOT NULL CHECK ( season > 0 ),
     language TEXT CHECK ( language IN ('latino', 'castellano') ),
+    batch_id INT,
+    batch_name TEXT,
     is_processed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
