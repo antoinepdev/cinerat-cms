@@ -4,6 +4,9 @@ export interface ITelegramError {
 		body: {
 			error_code?: number
 			description?: string
+			parameters?: {
+				retry_after?: number
+			}
 		}
 	}
 }
