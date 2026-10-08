@@ -6,6 +6,7 @@ import { incomingEpisodesRepository } from '../repositories/incomingEpisode.ts'
 import { seriesRepository } from '../repositories/series.ts'
 import { NotFoundError } from '../utils/errors.ts'
 import { episodeService } from './episodes.ts'
+import { telegramService } from './telegram.ts'
 
 vi.mock('../repositories/episode.ts', () => ({
 	episodeRepository: {
@@ -26,6 +27,12 @@ vi.mock('../repositories/series.ts', () => ({
 vi.mock('../repositories/incomingEpisode.ts', () => ({
 	incomingEpisodesRepository: {
 		markEpisodeAsProcessed: vi.fn(),
+	},
+}))
+
+vi.mock('./telegram.ts', () => ({
+	telegramService: {
+		sendEpisode: vi.fn(),
 	},
 }))
 
@@ -92,6 +99,10 @@ function mockMarkAsProcessed() {
 	})
 }
 
+function mockSendEpisode() {
+	vi.mocked(telegramService.sendEpisode).mockImplementation(async (messageId: number) => messageId + 1000)
+}
+
 describe('episodeService', () => {
 	describe('saveSeriesWithEpisodes', () => {
 		it('creates the serie when no serie exists with that tmdb_id and uses its id', async () => {
@@ -100,6 +111,7 @@ describe('episodeService', () => {
 			vi.mocked(seriesRepository.saveSeries).mockResolvedValue(makeSeries())
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series })
 
@@ -112,6 +124,7 @@ describe('episodeService', () => {
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries({ id: 42 })])
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() })
 
@@ -126,10 +139,12 @@ describe('episodeService', () => {
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode({ series_id: 42 })])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave, series: makeSeriesToSave() })
 
-			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(42, episodesToSave)
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(111)
+			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(42, [{ ...makeEpisodeToSave(), telegram_file_id_cas: 1111 }])
 			expect(episodeRepository.updateEpisodes).not.toHaveBeenCalled()
 		})
 
@@ -145,6 +160,7 @@ describe('episodeService', () => {
 
 			expect(episodeRepository.saveEpisodes).not.toHaveBeenCalled()
 			expect(episodeRepository.updateEpisodes).not.toHaveBeenCalled()
+			expect(telegramService.sendEpisode).not.toHaveBeenCalled()
 			expect(incomingEpisodesRepository.markEpisodeAsProcessed).toHaveBeenCalledWith(111)
 		})
 
@@ -165,6 +181,7 @@ describe('episodeService', () => {
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() })
 
@@ -187,6 +204,7 @@ describe('episodeService', () => {
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({
 				episodesToSave: [
@@ -207,6 +225,7 @@ describe('episodeService', () => {
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
 			mockMarkAsProcessed()
+			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({
 				episodesToSave: [
@@ -234,6 +253,7 @@ describe('episodeService', () => {
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockRejectedValue(new Error('db down'))
+			mockSendEpisode()
 
 			await expect(
 				episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() }),
@@ -246,10 +266,67 @@ describe('episodeService', () => {
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(incomingEpisodesRepository.markEpisodeAsProcessed).mockResolvedValue(undefined)
+			mockSendEpisode()
 
 			await expect(
 				episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() }),
 			).rejects.toThrow(NotFoundError)
+		})
+
+		it('publishes the files in Telegram before writing anything to the database', async () => {
+			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
+			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
+			vi.mocked(telegramService.sendEpisode).mockRejectedValue(new Error('telegram down'))
+
+			await expect(
+				episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() }),
+			).rejects.toThrow('telegram down')
+
+			expect(episodeRepository.saveEpisodes).not.toHaveBeenCalled()
+			expect(episodeRepository.updateEpisodes).not.toHaveBeenCalled()
+			expect(incomingEpisodesRepository.markEpisodeAsProcessed).not.toHaveBeenCalled()
+		})
+
+		it('saves the episodes with the message ids returned by Telegram', async () => {
+			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
+			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
+			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
+			mockSendEpisode()
+			mockMarkAsProcessed()
+
+			const incoming = makeEpisodeToSave({ telegram_file_id_cas: 111, telegram_file_id_lat: 222 })
+
+			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
+
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(1, 111)
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(2, 222)
+			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(7, [
+				{ ...incoming, telegram_file_id_cas: 1111, telegram_file_id_lat: 1222 },
+			])
+		})
+
+		it('copies only the new language when filling a cell', async () => {
+			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
+			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([
+				makeEpisode({ language_cas: true, language_lat: false, telegram_file_id_cas: 555, telegram_file_id_lat: 0 }),
+			])
+			vi.mocked(episodeRepository.updateEpisodes).mockResolvedValue([makeEpisode()])
+			mockSendEpisode()
+			mockMarkAsProcessed()
+
+			const incoming = makeEpisodeToSave({
+				language_cas: false,
+				language_lat: true,
+				telegram_file_id_cas: 0,
+				telegram_file_id_lat: 222,
+			})
+
+			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
+
+			expect(telegramService.sendEpisode).toHaveBeenCalledTimes(1)
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(222)
+			expect(episodeRepository.updateEpisodes).toHaveBeenCalledWith([{ ...incoming, id: 1, telegram_file_id_lat: 1222 }])
+			expect(episodeRepository.saveEpisodes).not.toHaveBeenCalled()
 		})
 	})
 })

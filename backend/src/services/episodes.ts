@@ -5,6 +5,7 @@ import { episodeRepository } from '../repositories/episode.ts'
 import { incomingEpisodesRepository } from '../repositories/incomingEpisode.ts'
 import { seriesRepository } from '../repositories/series.ts'
 import { NotFoundError } from '../utils/errors.ts'
+import { telegramService } from './telegram.ts'
 
 interface ISaveSeriesWithEpisodesParams {
 	episodesToSave: IEpisodeToSave[]
@@ -14,6 +15,23 @@ interface ISaveSeriesWithEpisodesParams {
 function getIncomingMessageIds(episodes: IEpisodeToSave[]): number[] {
 	const messageIds = episodes.flatMap((episode) => [episode.telegram_file_id_cas, episode.telegram_file_id_lat])
 	return [...new Set(messageIds.filter((messageId): messageId is number => Boolean(messageId)))]
+}
+
+async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Promise<T[]> {
+	const publishedEpisodes: T[] = []
+
+	for (const episode of episodes) {
+		const publishedEpisode = { ...episode }
+		if (publishedEpisode.telegram_file_id_cas) {
+			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(episode.telegram_file_id_cas)
+		}
+		if (publishedEpisode.telegram_file_id_lat) {
+			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(episode.telegram_file_id_lat)
+		}
+		publishedEpisodes.push(publishedEpisode)
+	}
+
+	return publishedEpisodes
 }
 
 async function markIncomingEpisodesAsProcessed(messageIds: number[]) {
@@ -31,8 +49,11 @@ async function saveSeriesWithEpisodes({ episodesToSave, series }: ISaveSeriesWit
 	const existentEpisodes = await episodeRepository.getEpisodes({ series_id: currentSeries.id })
 	const { toSave, toUpdate } = partitionEpisodes(episodesToSave, existentEpisodes)
 
-	if (toSave.length !== 0) await episodeRepository.saveEpisodes(currentSeries.id, toSave)
-	if (toUpdate.length !== 0) await episodeRepository.updateEpisodes(toUpdate)
+	const publishedToSave = toSave.length !== 0 ? await publishEpisodeFiles(toSave) : toSave
+	const publishedToUpdate = toUpdate.length !== 0 ? await publishEpisodeFiles(toUpdate) : toUpdate
+
+	if (publishedToSave.length !== 0) await episodeRepository.saveEpisodes(currentSeries.id, publishedToSave)
+	if (publishedToUpdate.length !== 0) await episodeRepository.updateEpisodes(publishedToUpdate)
 
 	const hasChanges = toSave.length !== 0 || toUpdate.length !== 0
 	if (serieWasCreated && !hasChanges) await seriesRepository.deleteSeries(currentSeries.id)
