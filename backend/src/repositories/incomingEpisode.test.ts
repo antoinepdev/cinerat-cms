@@ -1,6 +1,6 @@
 import { describe, expect, it, type Mock, vi } from 'vitest'
 import { pool } from '../database/index.ts'
-import type { IIncomingEpisode } from '../entities/incomingEpisode.ts'
+import type { IIncomingEpisode, IIncomingEpisodeToSave } from '../entities/incomingEpisode.ts'
 import { incomingEpisodesRepository } from './incomingEpisode.ts'
 
 vi.mock('../database/index.ts', () => ({ pool: { query: vi.fn() } }))
@@ -19,6 +19,7 @@ function makeIncomingEpisode(overrides: Partial<IIncomingEpisode> = {}): IIncomi
 		caption: 'Breaking Bad s04e07',
 		episode_number: 7,
 		season: 4,
+		language: 'castellano',
 		is_processed: false,
 		created_at: CREATED_AT,
 		updated_at: UPDATED_AT,
@@ -71,6 +72,46 @@ describe('incomingEpisodesRepository.markEpisodeAsProcessed', () => {
 		mockRows([])
 
 		const result = await incomingEpisodesRepository.markEpisodeAsProcessed(9999)
+
+		expect(result).toBeUndefined()
+	})
+})
+
+describe('incomingEpisodesRepository.saveIncomingEpisode', () => {
+	const toSave: IIncomingEpisodeToSave = {
+		message_id: 4242,
+		caption: 'Breaking Bad s04e07',
+		episode_number: 7,
+		season: 4,
+		language: 'castellano',
+		is_processed: false,
+	}
+
+	it('inserts the incoming episode and returns the created row', async () => {
+		mockRows([makeIncomingEpisode()])
+
+		const result = await incomingEpisodesRepository.saveIncomingEpisode(toSave)
+
+		expect(calledSql()).toContain(
+			'INSERT INTO incoming_episodes (message_id, caption, episode_number, season, language, is_processed)',
+		)
+		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, 'castellano', false])
+		expect(result?.language).toBe('castellano')
+	})
+
+	it('persists a null language', async () => {
+		mockRows([makeIncomingEpisode({ language: null })])
+
+		const result = await incomingEpisodesRepository.saveIncomingEpisode({ ...toSave, language: null })
+
+		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, null, false])
+		expect(result?.language).toBeNull()
+	})
+
+	it('returns undefined when the insert yields no row', async () => {
+		mockRows([])
+
+		const result = await incomingEpisodesRepository.saveIncomingEpisode(toSave)
 
 		expect(result).toBeUndefined()
 	})
