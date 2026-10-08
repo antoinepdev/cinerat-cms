@@ -1,12 +1,15 @@
 import type TelegramBot from 'node-telegram-bot-api'
 import { describe, expect, it, vi } from 'vitest'
 import type { IMovie } from '../entities/movie.ts'
+import { sleep } from '../helpers/sleep.ts'
 import {
 	bot,
 	MOVIE_CONTAINER_GROUP_ID,
 	MOVIE_LISTENER_GROUP_ID,
 	SERIES_CONTAINER_GROUP_ID,
 	SERIES_LISTENER_GROUP_ID,
+	SERIES_SEND_DELAY_MS,
+	SERIES_SEND_MAX_ATTEMPTS,
 } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
@@ -23,6 +26,12 @@ vi.mock('../provider/telegram.ts', () => ({
 	MOVIE_LISTENER_GROUP_ID: 102,
 	SERIES_CONTAINER_GROUP_ID: 103,
 	SERIES_LISTENER_GROUP_ID: 104,
+	SERIES_SEND_DELAY_MS: 1000,
+	SERIES_SEND_MAX_ATTEMPTS: 3,
+}))
+
+vi.mock('../helpers/sleep.ts', () => ({
+	sleep: vi.fn(),
 }))
 
 vi.mock('../repositories/movie.ts', () => ({
@@ -59,6 +68,26 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 		telegram_poster_id: 100,
 		...overrides,
 	} as IMovie
+}
+
+function makeFloodWaitError(retryAfter: number): Error {
+	return Object.assign(new Error(`429 Too Many Requests: retry after ${retryAfter}`), {
+		code: 'ETELEGRAM',
+		response: {
+			body: {
+				error_code: 429,
+				description: `Too Many Requests: retry after ${retryAfter}`,
+				parameters: { retry_after: retryAfter },
+			},
+		},
+	})
+}
+
+function makeBadRequestError(): Error {
+	return Object.assign(new Error('400 Bad Request: chat not found'), {
+		code: 'ETELEGRAM',
+		response: { body: { error_code: 400, description: 'Bad Request: chat not found' } },
+	})
 }
 
 describe('telegramService', () => {
@@ -153,14 +182,53 @@ describe('telegramService', () => {
 	})
 
 	describe('sendEpisode', () => {
-		it('copies the episode to the series container group without a caption', async () => {
+		it('copies the episode to the series container group without a caption, then waits the configured delay', async () => {
 			vi.mocked(bot.copyMessage).mockResolvedValue({ message_id: 900 })
 
 			const result = await telegramService.sendEpisode(777)
 
 			expect(bot.copyMessage).toHaveBeenCalledTimes(1)
 			expect(bot.copyMessage).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 777)
+			expect(sleep).toHaveBeenCalledTimes(1)
+			expect(sleep).toHaveBeenCalledWith(SERIES_SEND_DELAY_MS)
 			expect(result).toBe(900)
+		})
+
+		it('retries when Telegram answers 429 and honours retry_after', async () => {
+			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+			vi.mocked(bot.copyMessage).mockRejectedValueOnce(makeFloodWaitError(5)).mockResolvedValueOnce({ message_id: 901 })
+
+			const result = await telegramService.sendEpisode(777)
+
+			expect(result).toBe(901)
+			expect(bot.copyMessage).toHaveBeenCalledTimes(2)
+			expect(sleep).toHaveBeenNthCalledWith(1, 5000)
+			expect(sleep).toHaveBeenNthCalledWith(2, SERIES_SEND_DELAY_MS)
+			expect(consoleLog).toHaveBeenCalledTimes(1)
+			expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('SERIES_SEND_DELAY_MS=1000'))
+			consoleLog.mockRestore()
+		})
+
+		it(`gives up after ${SERIES_SEND_MAX_ATTEMPTS} attempts when Telegram keeps answering 429`, async () => {
+			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+			vi.mocked(bot.copyMessage).mockRejectedValue(makeFloodWaitError(5))
+
+			await expect(telegramService.sendEpisode(777)).rejects.toThrow('429 Too Many Requests')
+
+			expect(bot.copyMessage).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
+			expect(sleep).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS - 1)
+			expect(sleep).toHaveBeenCalledWith(5000)
+			expect(consoleLog).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
+			consoleLog.mockRestore()
+		})
+
+		it('does not retry non-429 telegram errors', async () => {
+			vi.mocked(bot.copyMessage).mockRejectedValue(makeBadRequestError())
+
+			await expect(telegramService.sendEpisode(777)).rejects.toThrow('400 Bad Request')
+
+			expect(bot.copyMessage).toHaveBeenCalledTimes(1)
+			expect(sleep).not.toHaveBeenCalled()
 		})
 	})
 
