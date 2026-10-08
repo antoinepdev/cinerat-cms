@@ -3,6 +3,7 @@ export interface IIncomingEpisodeToSave {
 	caption: string
 	episode_number: number
 	season: number
+	language: 'latino' | 'castellano' | null
 	is_processed: boolean
 }
 
