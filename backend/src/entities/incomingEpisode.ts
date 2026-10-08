@@ -4,6 +4,8 @@ export interface IIncomingEpisodeToSave {
 	episode_number: number
 	season: number
 	language: 'latino' | 'castellano' | null
+	batch_id: number
+	batch_name: string
 	is_processed: boolean
 }
 
