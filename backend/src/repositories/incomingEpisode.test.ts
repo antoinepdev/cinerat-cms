@@ -20,6 +20,8 @@ function makeIncomingEpisode(overrides: Partial<IIncomingEpisode> = {}): IIncomi
 		episode_number: 7,
 		season: 4,
 		language: 'castellano',
+		batch_id: 555,
+		batch_name: 'Breaking Bad',
 		is_processed: false,
 		created_at: CREATED_AT,
 		updated_at: UPDATED_AT,
@@ -84,6 +86,8 @@ describe('incomingEpisodesRepository.saveIncomingEpisode', () => {
 		episode_number: 7,
 		season: 4,
 		language: 'castellano',
+		batch_id: 555,
+		batch_name: 'Breaking Bad',
 		is_processed: false,
 	}
 
@@ -93,9 +97,9 @@ describe('incomingEpisodesRepository.saveIncomingEpisode', () => {
 		const result = await incomingEpisodesRepository.saveIncomingEpisode(toSave)
 
 		expect(calledSql()).toContain(
-			'INSERT INTO incoming_episodes (message_id, caption, episode_number, season, language, is_processed)',
+			'INSERT INTO incoming_episodes (message_id, caption, episode_number, season, language, batch_id, batch_name, is_processed)',
 		)
-		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, 'castellano', false])
+		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, 'castellano', 555, 'Breaking Bad', false])
 		expect(result?.language).toBe('castellano')
 	})
 
@@ -104,7 +108,7 @@ describe('incomingEpisodesRepository.saveIncomingEpisode', () => {
 
 		const result = await incomingEpisodesRepository.saveIncomingEpisode({ ...toSave, language: null })
 
-		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, null, false])
+		expect(calledValues()).toEqual([4242, 'Breaking Bad s04e07', 7, 4, null, 555, 'Breaking Bad', false])
 		expect(result?.language).toBeNull()
 	})
 
