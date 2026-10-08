@@ -93,6 +93,7 @@ function mockMarkAsProcessed() {
 		caption: 'Breaking Bad s04e07',
 		episode_number: 7,
 		season: 4,
+		language: 'castellano',
 		is_processed: true,
 		created_at: CREATED_AT,
 		updated_at: UPDATED_AT,
