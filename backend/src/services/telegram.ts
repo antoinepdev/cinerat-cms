@@ -1,7 +1,13 @@
 import type { IMovieToSave } from '../entities/movie.ts'
 import { getMovieCaption } from '../helpers/getMovieCaption.ts'
 import { getPosterCaption } from '../helpers/getPosterCaption.ts'
-import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
+import {
+	bot,
+	MOVIE_CONTAINER_GROUP_ID,
+	MOVIE_LISTENER_GROUP_ID,
+	SERIES_CONTAINER_GROUP_ID,
+	SERIES_LISTENER_GROUP_ID,
+} from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
 import type { IMovieInput, IMovieToUpdateParams } from '../schemas/movie.ts'
@@ -59,6 +65,11 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 	return data
 }
 
+async function sendEpisode(episodeMessageId: number): Promise<number> {
+	const copiedEpisode = await bot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId)
+	return copiedEpisode.message_id
+}
+
 async function markVideosAsProcessed(messageIds: number[]) {
 	for (const messageId of messageIds) {
 		if (messageId) {
@@ -71,6 +82,7 @@ async function markVideosAsProcessed(messageIds: number[]) {
 const telegramService = {
 	saveMovie,
 	updateMovieFiles,
+	sendEpisode,
 	markVideosAsProcessed,
 }
 

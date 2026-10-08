@@ -1,7 +1,13 @@
 import type TelegramBot from 'node-telegram-bot-api'
 import { describe, expect, it, vi } from 'vitest'
 import type { IMovie } from '../entities/movie.ts'
-import { bot, MOVIE_CONTAINER_GROUP_ID, MOVIE_LISTENER_GROUP_ID } from '../provider/telegram.ts'
+import {
+	bot,
+	MOVIE_CONTAINER_GROUP_ID,
+	MOVIE_LISTENER_GROUP_ID,
+	SERIES_CONTAINER_GROUP_ID,
+	SERIES_LISTENER_GROUP_ID,
+} from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
 import type { IMovieToUpdateParams } from '../schemas/movie.ts'
@@ -15,6 +21,8 @@ vi.mock('../provider/telegram.ts', () => ({
 	},
 	MOVIE_CONTAINER_GROUP_ID: 101,
 	MOVIE_LISTENER_GROUP_ID: 102,
+	SERIES_CONTAINER_GROUP_ID: 103,
+	SERIES_LISTENER_GROUP_ID: 104,
 }))
 
 vi.mock('../repositories/movie.ts', () => ({
@@ -141,6 +149,18 @@ describe('telegramService', () => {
 
 			await expect(telegramService.updateMovieFiles(params)).rejects.toThrow(message)
 			expect(bot.copyMessage).not.toHaveBeenCalled()
+		})
+	})
+
+	describe('sendEpisode', () => {
+		it('copies the episode to the series container group without a caption', async () => {
+			vi.mocked(bot.copyMessage).mockResolvedValue({ message_id: 900 })
+
+			const result = await telegramService.sendEpisode(777)
+
+			expect(bot.copyMessage).toHaveBeenCalledTimes(1)
+			expect(bot.copyMessage).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 777)
+			expect(result).toBe(900)
 		})
 	})
 
