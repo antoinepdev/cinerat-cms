@@ -34,8 +34,18 @@ export function partitionEpisodes(episodesToSave: IEpisodeToSave[], existentEpis
 
 		const existentEpisode = existentEpisodesByKey.get(key)
 		if (!existentEpisode) partition.toSave.push(episode)
-		else if (bringsNewLanguage(episode, existentEpisode)) partition.toUpdate.push({ ...episode, id: existentEpisode.id })
-		else partition.toDelete.push(episode)
+		else if (bringsNewLanguage(episode, existentEpisode)) {
+			const bringsNewCas = bringsCas(episode) && !bringsCas(existentEpisode)
+			const bringsNewLat = bringsLat(episode) && !bringsLat(existentEpisode)
+			partition.toUpdate.push({
+				...episode,
+				language_cas: bringsNewCas,
+				language_lat: bringsNewLat,
+				telegram_file_id_cas: bringsNewCas ? episode.telegram_file_id_cas : 0,
+				telegram_file_id_lat: bringsNewLat ? episode.telegram_file_id_lat : 0,
+				id: existentEpisode.id,
+			})
+		} else partition.toDelete.push(episode)
 	}
 
 	return partition

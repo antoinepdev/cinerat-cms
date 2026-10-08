@@ -75,11 +75,13 @@ describe('partitionEpisodes', () => {
 			toDelete: [],
 		},
 		{
-			name: 'an incoming episode is updated when only one of its two languages is missing',
+			name: 'only the missing language reaches the update when one of its two languages is missing',
 			episodesToSave: [makeEpisodeToSave(BOTH)],
 			existentEpisodes: [makeEpisode(CAS)],
 			toSave: [],
-			toUpdate: [makeEpisodeToUpdate(1, BOTH)],
+			toUpdate: [
+				makeEpisodeToUpdate(1, { language_cas: false, language_lat: true, telegram_file_id_cas: 0, telegram_file_id_lat: 222 }),
+			],
 			toDelete: [],
 		},
 		{
@@ -186,7 +188,13 @@ describe('partitionEpisodes', () => {
 			toUpdate: [
 				makeEpisodeToUpdate(12, { episode_number: 2, ...CAS }),
 				makeEpisodeToUpdate(14, { episode_number: 4, ...LAT }),
-				makeEpisodeToUpdate(17, { episode_number: 7, ...BOTH }),
+				makeEpisodeToUpdate(17, {
+					episode_number: 7,
+					language_cas: false,
+					language_lat: true,
+					telegram_file_id_cas: 0,
+					telegram_file_id_lat: 222,
+				}),
 			],
 			toDelete: [makeEpisodeToSave({ episode_number: 1, ...CAS }), makeEpisodeToSave({ episode_number: 6, ...BOTH })],
 		},
