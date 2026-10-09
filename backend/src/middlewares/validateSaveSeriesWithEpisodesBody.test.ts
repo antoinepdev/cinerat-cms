@@ -86,6 +86,46 @@ describe('validateSaveSeriesWithEpisodesBody', () => {
 		expect(next).not.toHaveBeenCalled()
 	})
 
+	it.for<{ name: string; episode: IEpisodeToSave; message: string }>([
+		{
+			name: 'no language',
+			episode: makeValidEpisode({ language_cas: false, language_lat: false }),
+			message: 'You need specify one language at latest',
+		},
+		{
+			name: 'no telegram file id',
+			episode: makeValidEpisode({ telegram_file_id_cas: undefined, telegram_file_id_lat: undefined }),
+			message: 'You need specify one telegram file id at latest',
+		},
+	])('rejects an episode with $name', async ({ episode, message }) => {
+		const req = { body: { ...makeValidBody(), episodesToSave: [episode] } } as Request
+		const next = vi.fn()
+
+		await expectValidationError(validateSaveSeriesWithEpisodesBody(req, {} as Response, next), message)
+
+		expect(next).not.toHaveBeenCalled()
+	})
+
+	it('accepts a series without cas/lat titles and an episode with a single language and file id', async () => {
+		const body = {
+			series: { ...makeValidSeries(), title_cas: undefined, title_lat: undefined },
+			episodesToSave: [
+				makeValidEpisode({
+					language_cas: true,
+					language_lat: undefined,
+					telegram_file_id_cas: 123,
+					telegram_file_id_lat: undefined,
+				}),
+			],
+		}
+		const req = { body } as Request
+		const next = vi.fn()
+
+		await validateSaveSeriesWithEpisodesBody(req, {} as Response, next)
+
+		expect(next).toHaveBeenCalled()
+	})
+
 	it('formats the zod issues into field errors', async () => {
 		const req = { body: { ...makeValidBody(), series: { ...makeValidSeries(), year: 'abc' } } } as Request
 		const next = vi.fn()
