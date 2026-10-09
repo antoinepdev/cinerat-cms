@@ -1,6 +1,7 @@
 import cors from 'cors'
 import Express from 'express'
 import { errorHandler } from './middlewares/errorHandler.ts'
+import { incomingEpisodesRouter } from './routes/incomingEpisodes.ts'
 import { moviesRouter } from './routes/movies.ts'
 import { seriesRouter } from './routes/series.ts'
 import { videosRouter } from './routes/videos.ts'
@@ -16,6 +17,7 @@ app.use(cors())
 app.use('/movies', moviesRouter)
 app.use('/videos', videosRouter)
 app.use('/series', seriesRouter)
+app.use('/incoming-episodes', incomingEpisodesRouter)
 
 app.use(errorHandler)
 
