@@ -1,8 +1,8 @@
 export interface ISeriesToSave {
 	tmdb_id: number
 	title_en: string
-	title_cas: string
-	title_lat: string
+	title_cas?: string
+	title_lat?: string
 	year: number
 	poster: `https://image.tmdb.org/${string}.jpg`
 	description: string
