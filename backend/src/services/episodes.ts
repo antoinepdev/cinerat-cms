@@ -23,10 +23,10 @@ async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Pro
 	for (const episode of episodes) {
 		const publishedEpisode = { ...episode }
 		if (publishedEpisode.telegram_file_id_cas) {
-			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(episode.telegram_file_id_cas)
+			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(publishedEpisode.telegram_file_id_cas)
 		}
 		if (publishedEpisode.telegram_file_id_lat) {
-			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(episode.telegram_file_id_lat)
+			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(publishedEpisode.telegram_file_id_lat)
 		}
 		publishedEpisodes.push(publishedEpisode)
 	}
