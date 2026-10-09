@@ -13,10 +13,10 @@ async function saveEpisodes(seriesId: number, episodes: IEpisodeToSave[]): Promi
 			seriesId,
 			ep.episode_number,
 			ep.season,
-			ep.language_cas,
-			ep.language_lat,
-			ep.telegram_file_id_cas,
-			ep.telegram_file_id_lat,
+			ep.language_cas ?? false,
+			ep.language_lat ?? false,
+			ep.telegram_file_id_cas ?? null,
+			ep.telegram_file_id_lat ?? null,
 		]
 
 		const result = await pool.query(baseQuery, values)
