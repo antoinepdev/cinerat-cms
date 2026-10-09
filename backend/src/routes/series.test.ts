@@ -134,8 +134,12 @@ describe('POST /series', () => {
 		const res = await request(app).post('/series').send(validBody).expect(201)
 
 		expect(res.body).toEqual({})
-		expect(bot.copyMessage).toHaveBeenNthCalledWith(1, SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 111)
-		expect(bot.copyMessage).toHaveBeenNthCalledWith(2, SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 222)
+		expect(bot.copyMessage).toHaveBeenNthCalledWith(1, SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 111, {
+			caption: '4x07\nEspañol castellano 🇪🇸',
+		})
+		expect(bot.copyMessage).toHaveBeenNthCalledWith(2, SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 222, {
+			caption: '4x07\nEspañol latino 🇲🇽',
+		})
 		expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(7, [
 			{ ...validBody.episodesToSave[0], telegram_file_id_cas: 1111, telegram_file_id_lat: 1222 },
 		])
