@@ -7,8 +7,8 @@ const SeriesSchema: z.ZodType<ISeriesToSave> = z
 	.object({
 		tmdb_id: z.number().int(),
 		title_en: z.string(),
-		title_cas: z.string(),
-		title_lat: z.string(),
+		title_cas: z.string().optional(),
+		title_lat: z.string().optional(),
 		year: z.number().int(),
 		poster: z.templateLiteral(['https://image.tmdb.org/', z.string(), '.jpg']),
 		description: z.string(),
