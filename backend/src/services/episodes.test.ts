@@ -103,7 +103,9 @@ function mockMarkAsProcessed() {
 }
 
 function mockSendEpisode() {
-	vi.mocked(telegramService.sendEpisode).mockImplementation(async (messageId: number) => messageId + 1000)
+	vi.mocked(telegramService.sendEpisode).mockImplementation(
+		async (messageId: number, _episodeCaption: string) => messageId + 1000,
+	)
 }
 
 describe('episodeService', () => {
@@ -146,7 +148,7 @@ describe('episodeService', () => {
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave, series: makeSeriesToSave() })
 
-			expect(telegramService.sendEpisode).toHaveBeenCalledWith(111)
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(111, '4x07\nEspañol castellano 🇪🇸')
 			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(42, [{ ...makeEpisodeToSave(), telegram_file_id_cas: 1111 }])
 			expect(episodeRepository.updateEpisodes).not.toHaveBeenCalled()
 		})
@@ -301,8 +303,8 @@ describe('episodeService', () => {
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
 
-			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(1, 111)
-			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(2, 222)
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(1, 111, '4x07\nEspañol castellano 🇪🇸')
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(2, 222, '4x07\nEspañol latino 🇲🇽')
 			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(7, [
 				{ ...incoming, telegram_file_id_cas: 1111, telegram_file_id_lat: 1222 },
 			])
@@ -327,7 +329,7 @@ describe('episodeService', () => {
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
 
 			expect(telegramService.sendEpisode).toHaveBeenCalledTimes(1)
-			expect(telegramService.sendEpisode).toHaveBeenCalledWith(222)
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(222, '4x07\nEspañol latino 🇲🇽')
 			expect(episodeRepository.updateEpisodes).toHaveBeenCalledWith([{ ...incoming, id: 1, telegram_file_id_lat: 1222 }])
 			expect(episodeRepository.saveEpisodes).not.toHaveBeenCalled()
 		})
