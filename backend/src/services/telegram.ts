@@ -75,10 +75,12 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 	return data
 }
 
-async function sendEpisode(episodeMessageId: number): Promise<number> {
+async function sendEpisode(episodeMessageId: number, episodeCaption: string): Promise<number> {
 	for (let attempt = 1; attempt <= SERIES_SEND_MAX_ATTEMPTS; attempt++) {
 		try {
-			const copiedEpisode = await bot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId)
+			const copiedEpisode = await bot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId, {
+				caption: episodeCaption,
+			})
 			await sleep(SERIES_SEND_DELAY_MS)
 			return copiedEpisode.message_id
 		} catch (error) {

@@ -1,5 +1,6 @@
 import type { IEpisodeToSave } from '../entities/episode.ts'
 import type { ISeriesToSave } from '../entities/series.ts'
+import { getEpisodeCaption } from '../helpers/getEpisodeCaption.ts'
 import { partitionEpisodes } from '../helpers/partitionEpisodes.ts'
 import { episodeRepository } from '../repositories/episode.ts'
 import { incomingEpisodesRepository } from '../repositories/incomingEpisode.ts'
@@ -23,10 +24,18 @@ async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Pro
 	for (const episode of episodes) {
 		const publishedEpisode = { ...episode }
 		if (publishedEpisode.telegram_file_id_cas) {
-			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(publishedEpisode.telegram_file_id_cas)
+			const episodeCaption = await getEpisodeCaption(publishedEpisode, 'cas')
+			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(
+				publishedEpisode.telegram_file_id_cas,
+				episodeCaption,
+			)
 		}
 		if (publishedEpisode.telegram_file_id_lat) {
-			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(publishedEpisode.telegram_file_id_lat)
+			const episodeCaption = await getEpisodeCaption(publishedEpisode, 'lat')
+			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(
+				publishedEpisode.telegram_file_id_lat,
+				episodeCaption,
+			)
 		}
 		publishedEpisodes.push(publishedEpisode)
 	}
