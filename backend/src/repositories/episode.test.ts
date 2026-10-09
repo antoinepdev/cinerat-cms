@@ -103,6 +103,21 @@ describe('episodeRepository', () => {
 			expect(poolQuery.mock.calls[1]![1]).toEqual([1396, 8, 4, true, false, 222, 0])
 		})
 
+		it('falls back to false for missing languages and null for missing file ids', async () => {
+			mockRows([makeEpisode()])
+
+			await episodeRepository.saveEpisodes(1396, [
+				makeEpisodeToSave({
+					language_cas: undefined,
+					language_lat: undefined,
+					telegram_file_id_cas: undefined,
+					telegram_file_id_lat: undefined,
+				}),
+			])
+
+			expect(poolQuery.mock.calls[0]![1]).toEqual([1396, 7, 4, false, false, null, null])
+		})
+
 		it('takes the series id from the parameter instead of the payload', async () => {
 			mockRows([makeEpisode()])
 
