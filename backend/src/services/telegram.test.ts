@@ -1,6 +1,7 @@
 import type TelegramBot from 'node-telegram-bot-api'
 import { describe, expect, it, vi } from 'vitest'
 import type { IMovie } from '../entities/movie.ts'
+import type { ISeriesInput } from '../entities/series.ts'
 import { sleep } from '../helpers/sleep.ts'
 import {
 	bot,
@@ -10,6 +11,7 @@ import {
 	SERIES_LISTENER_GROUP_ID,
 	SERIES_SEND_DELAY_MS,
 	SERIES_SEND_MAX_ATTEMPTS,
+	seriesBot,
 } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
@@ -19,6 +21,10 @@ import { telegramService } from './telegram.ts'
 
 vi.mock('../provider/telegram.ts', () => ({
 	bot: {
+		sendPhoto: vi.fn(),
+		copyMessage: vi.fn(),
+	},
+	seriesBot: {
 		sendPhoto: vi.fn(),
 		copyMessage: vi.fn(),
 	},
@@ -68,6 +74,22 @@ function makeMovie(overrides: Partial<IMovie> = {}): IMovie {
 		telegram_poster_id: 100,
 		...overrides,
 	} as IMovie
+}
+
+function makeSeriesInput(overrides: Partial<ISeriesInput> = {}): ISeriesInput {
+	return {
+		tmdb_id: 1396,
+		title_en: 'Breaking Bad',
+		title_cas: 'Breaking Bad',
+		title_lat: 'Breaking Bad',
+		year: 2008,
+		poster: 'https://image.tmdb.org/t/p/poster.jpg',
+		description: 'A chemistry teacher turns to crime.',
+		popularity: 100.5,
+		backdrop_path: 'https://image.tmdb.org/t/p/backdrop.jpg',
+		genres: ['Drama'],
+		...overrides,
+	}
 }
 
 function makeFloodWaitError(retryAfter: number): Error {
@@ -181,16 +203,30 @@ describe('telegramService', () => {
 		})
 	})
 
+	describe('sendSeriesPoster', () => {
+		it('sends the poster to the series container group and returns its message id', async () => {
+			const series = makeSeriesInput()
+			vi.mocked(seriesBot.sendPhoto).mockResolvedValue({ message_id: 700 } as TelegramBot.Message)
+
+			const result = await telegramService.sendSeriesPoster(series)
+
+			expect(seriesBot.sendPhoto).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, series.poster, {
+				caption: expect.any(String),
+			})
+			expect(result).toBe(700)
+		})
+	})
+
 	describe('sendEpisode', () => {
 		const caption = '4x07\nEspañol castellano 🇪🇸'
 
 		it('copies the episode to the series container group with the caption, then waits the configured delay', async () => {
-			vi.mocked(bot.copyMessage).mockResolvedValue({ message_id: 900 })
+			vi.mocked(seriesBot.copyMessage).mockResolvedValue({ message_id: 900 })
 
 			const result = await telegramService.sendEpisode(777, caption)
 
-			expect(bot.copyMessage).toHaveBeenCalledTimes(1)
-			expect(bot.copyMessage).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 777, { caption })
+			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(1)
+			expect(seriesBot.copyMessage).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 777, { caption })
 			expect(sleep).toHaveBeenCalledTimes(1)
 			expect(sleep).toHaveBeenCalledWith(SERIES_SEND_DELAY_MS)
 			expect(result).toBe(900)
@@ -198,12 +234,12 @@ describe('telegramService', () => {
 
 		it('retries when Telegram answers 429 and honours retry_after', async () => {
 			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
-			vi.mocked(bot.copyMessage).mockRejectedValueOnce(makeFloodWaitError(5)).mockResolvedValueOnce({ message_id: 901 })
+			vi.mocked(seriesBot.copyMessage).mockRejectedValueOnce(makeFloodWaitError(5)).mockResolvedValueOnce({ message_id: 901 })
 
 			const result = await telegramService.sendEpisode(777, caption)
 
 			expect(result).toBe(901)
-			expect(bot.copyMessage).toHaveBeenCalledTimes(2)
+			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(2)
 			expect(sleep).toHaveBeenNthCalledWith(1, 5000)
 			expect(sleep).toHaveBeenNthCalledWith(2, SERIES_SEND_DELAY_MS)
 			expect(consoleLog).toHaveBeenCalledTimes(1)
@@ -213,11 +249,11 @@ describe('telegramService', () => {
 
 		it(`gives up after ${SERIES_SEND_MAX_ATTEMPTS} attempts when Telegram keeps answering 429`, async () => {
 			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
-			vi.mocked(bot.copyMessage).mockRejectedValue(makeFloodWaitError(5))
+			vi.mocked(seriesBot.copyMessage).mockRejectedValue(makeFloodWaitError(5))
 
 			await expect(telegramService.sendEpisode(777, caption)).rejects.toThrow('429 Too Many Requests')
 
-			expect(bot.copyMessage).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
+			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
 			expect(sleep).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS - 1)
 			expect(sleep).toHaveBeenCalledWith(5000)
 			expect(consoleLog).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
@@ -225,11 +261,11 @@ describe('telegramService', () => {
 		})
 
 		it('does not retry non-429 telegram errors', async () => {
-			vi.mocked(bot.copyMessage).mockRejectedValue(makeBadRequestError())
+			vi.mocked(seriesBot.copyMessage).mockRejectedValue(makeBadRequestError())
 
 			await expect(telegramService.sendEpisode(777, caption)).rejects.toThrow('400 Bad Request')
 
-			expect(bot.copyMessage).toHaveBeenCalledTimes(1)
+			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(1)
 			expect(sleep).not.toHaveBeenCalled()
 		})
 	})

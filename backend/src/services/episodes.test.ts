@@ -32,6 +32,7 @@ vi.mock('../repositories/incomingEpisode.ts', () => ({
 
 vi.mock('./telegram.ts', () => ({
 	telegramService: {
+		sendSeriesPoster: vi.fn(),
 		sendEpisode: vi.fn(),
 	},
 }))
@@ -48,6 +49,7 @@ function makeSeries(overrides: Partial<ISeries> = {}): ISeries {
 		title_lat: 'Breaking Bad',
 		year: 2008,
 		poster: 'https://image.tmdb.org/t/p/poster.jpg',
+		telegram_poster_id: 500,
 		backdrop_path: 'https://image.tmdb.org/t/p/backdrop.jpg',
 		description: 'A chemistry teacher turns to crime.',
 		popularity: 100.5,
@@ -108,19 +110,25 @@ function mockSendEpisode() {
 	)
 }
 
+function mockSendSeriesPoster() {
+	vi.mocked(telegramService.sendSeriesPoster).mockResolvedValue(500)
+}
+
 describe('episodeService', () => {
 	describe('saveSeriesWithEpisodes', () => {
-		it('creates the serie when no serie exists with that tmdb_id and uses its id', async () => {
+		it('publishes the poster then creates the serie when no serie exists with that tmdb_id', async () => {
 			const series = makeSeriesToSave()
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([])
 			vi.mocked(seriesRepository.saveSeries).mockResolvedValue(makeSeries())
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
+			mockSendSeriesPoster()
 			mockMarkAsProcessed()
 			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series })
 
 			expect(seriesRepository.getSeries).toHaveBeenCalledWith({ tmdb_id: 1396 })
+			expect(telegramService.sendSeriesPoster).toHaveBeenCalledWith(series)
 			expect(seriesRepository.saveSeries).toHaveBeenCalledWith(series)
 			expect(episodeRepository.getEpisodes).toHaveBeenCalledWith({ series_id: 7 })
 		})
@@ -169,29 +177,29 @@ describe('episodeService', () => {
 			expect(incomingEpisodesRepository.markEpisodeAsProcessed).toHaveBeenCalledWith(111)
 		})
 
-		it('deletes the serie it created when no episode was saved or updated', async () => {
+		it('does not publish the poster nor create the serie when there is no episode to save', async () => {
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([])
-			vi.mocked(seriesRepository.saveSeries).mockResolvedValue(makeSeries())
-			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [], series: makeSeriesToSave() })
 
-			expect(seriesRepository.saveSeries).toHaveBeenCalled()
-			expect(seriesRepository.deleteSeries).toHaveBeenCalledWith(7)
+			expect(telegramService.sendSeriesPoster).not.toHaveBeenCalled()
+			expect(seriesRepository.saveSeries).not.toHaveBeenCalled()
+			expect(episodeRepository.getEpisodes).not.toHaveBeenCalled()
 		})
 
-		it('keeps the serie it created when at least one episode was saved', async () => {
+		it('creates the serie when at least one episode was saved', async () => {
 			vi.mocked(seriesRepository.getSeries).mockResolvedValue([])
 			vi.mocked(seriesRepository.saveSeries).mockResolvedValue(makeSeries())
 			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
 			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
+			mockSendSeriesPoster()
 			mockMarkAsProcessed()
 			mockSendEpisode()
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [makeEpisodeToSave()], series: makeSeriesToSave() })
 
+			expect(telegramService.sendSeriesPoster).toHaveBeenCalled()
 			expect(episodeRepository.saveEpisodes).toHaveBeenCalled()
-			expect(seriesRepository.deleteSeries).not.toHaveBeenCalled()
 		})
 
 		it('never deletes a serie that already existed', async () => {

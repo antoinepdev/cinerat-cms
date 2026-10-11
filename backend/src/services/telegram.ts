@@ -1,4 +1,5 @@
 import type { IMovieToSave } from '../entities/movie.ts'
+import type { ISeriesInput } from '../entities/series.ts'
 import { getMovieCaption } from '../helpers/getMovieCaption.ts'
 import { getPosterCaption } from '../helpers/getPosterCaption.ts'
 import { isTelegramApiError } from '../helpers/isTelegramApiError.ts'
@@ -11,6 +12,7 @@ import {
 	SERIES_LISTENER_GROUP_ID,
 	SERIES_SEND_DELAY_MS,
 	SERIES_SEND_MAX_ATTEMPTS,
+	seriesBot,
 } from '../provider/telegram.ts'
 import { movieRepository } from '../repositories/movie.ts'
 import { videosRepository } from '../repositories/videos.ts'
@@ -75,10 +77,16 @@ async function updateMovieFiles(data: IMovieToUpdateParams): Promise<IMovieToUpd
 	return data
 }
 
+async function sendSeriesPoster(series: ISeriesInput): Promise<number> {
+	const posterCaption = await getPosterCaption(series)
+	const sendedPoster = await seriesBot.sendPhoto(SERIES_CONTAINER_GROUP_ID, series.poster, { caption: posterCaption })
+	return sendedPoster.message_id
+}
+
 async function sendEpisode(episodeMessageId: number, episodeCaption: string): Promise<number> {
 	for (let attempt = 1; attempt <= SERIES_SEND_MAX_ATTEMPTS; attempt++) {
 		try {
-			const copiedEpisode = await bot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId, {
+			const copiedEpisode = await seriesBot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId, {
 				caption: episodeCaption,
 			})
 			await sleep(SERIES_SEND_DELAY_MS)
@@ -111,6 +119,7 @@ async function markVideosAsProcessed(messageIds: number[]) {
 const telegramService = {
 	saveMovie,
 	updateMovieFiles,
+	sendSeriesPoster,
 	sendEpisode,
 	markVideosAsProcessed,
 }

@@ -1,11 +1,11 @@
 import type { Request, Response } from 'express'
 import { describe, expect, it, vi } from 'vitest'
 import type { IEpisodeToSave } from '../entities/episode.ts'
-import type { ISeriesToSave } from '../entities/series.ts'
+import type { ISeriesInput } from '../entities/series.ts'
 import { ValidationError } from '../utils/errors.ts'
 import { validateSaveSeriesWithEpisodesBody } from './validateSaveSeriesWithEpisodesBody.ts'
 
-function makeValidSeries(overrides: Partial<ISeriesToSave> = {}): ISeriesToSave {
+function makeValidSeries(overrides: Partial<ISeriesInput> = {}): ISeriesInput {
 	return {
 		tmdb_id: 1396,
 		title_en: 'Breaking Bad',
@@ -62,7 +62,7 @@ describe('validateSaveSeriesWithEpisodesBody', () => {
 			name: 'a poster that is not an image.tmdb.org url',
 			body: {
 				...makeValidBody(),
-				series: makeValidSeries({ poster: 'https://example.com/poster.jpg' as ISeriesToSave['poster'] }),
+				series: makeValidSeries({ poster: 'https://example.com/poster.jpg' as ISeriesInput['poster'] }),
 			},
 		},
 		{

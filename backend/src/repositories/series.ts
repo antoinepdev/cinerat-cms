@@ -2,7 +2,7 @@ import { pool } from '../database/index.ts'
 import type { ISeries, ISeriesFilters, ISeriesToSave } from '../entities/series.ts'
 
 const COLUMNS =
-	'id, title_en, title_cas, title_lat, year, tmdb_id, poster, backdrop_path, description, popularity, genres, created_at, updated_at'
+	'id, title_en, title_cas, title_lat, year, tmdb_id, poster, telegram_poster_id, backdrop_path, description, popularity, genres, created_at, updated_at'
 
 async function getSeries(filters?: ISeriesFilters): Promise<ISeries[]> {
 	const conditions: string[] = []
@@ -20,7 +20,7 @@ async function getSeries(filters?: ISeriesFilters): Promise<ISeries[]> {
 }
 
 async function saveSeries(series: ISeriesToSave): Promise<ISeries> {
-	const query = `INSERT INTO series (title_en, title_cas, title_lat, year, tmdb_id, poster, backdrop_path, description, popularity, genres) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING ${COLUMNS}`
+	const query = `INSERT INTO series (title_en, title_cas, title_lat, year, tmdb_id, poster, telegram_poster_id, backdrop_path, description, popularity, genres) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING ${COLUMNS}`
 	const values = [
 		series.title_en,
 		series.title_cas,
@@ -28,6 +28,7 @@ async function saveSeries(series: ISeriesToSave): Promise<ISeries> {
 		series.year,
 		series.tmdb_id,
 		series.poster,
+		series.telegram_poster_id,
 		series.backdrop_path,
 		series.description,
 		series.popularity,

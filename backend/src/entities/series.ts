@@ -1,4 +1,4 @@
-export interface ISeriesToSave {
+export interface ISeriesInput {
 	tmdb_id: number
 	title_en: string
 	title_cas?: string
@@ -9,6 +9,10 @@ export interface ISeriesToSave {
 	popularity: number
 	backdrop_path: `https://image.tmdb.org/${string}.jpg`
 	genres: string[]
+}
+
+export interface ISeriesToSave extends ISeriesInput {
+	telegram_poster_id: number
 }
 
 export interface ISeries extends ISeriesToSave {

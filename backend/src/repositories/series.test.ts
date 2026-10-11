@@ -19,6 +19,7 @@ function makeSeries(overrides: Partial<ISeries> = {}): ISeries {
 		title_lat: 'Breaking Bad',
 		year: 2008,
 		poster: 'https://image.tmdb.org/t/p/poster.jpg',
+		telegram_poster_id: 500,
 		backdrop_path: 'https://image.tmdb.org/t/p/backdrop.jpg',
 		description: 'A chemistry teacher turns to crime.',
 		popularity: 100.5,
@@ -47,7 +48,7 @@ describe('seriesRepository', () => {
 
 			const sql = poolQuery.mock.calls[0]![0]
 			expect(sql).toContain(
-				'SELECT id, title_en, title_cas, title_lat, year, tmdb_id, poster, backdrop_path, description, popularity, genres, created_at, updated_at from series',
+				'SELECT id, title_en, title_cas, title_lat, year, tmdb_id, poster, telegram_poster_id, backdrop_path, description, popularity, genres, created_at, updated_at from series',
 			)
 			expect(sql).not.toContain('SELECT (')
 		})
@@ -92,7 +93,7 @@ describe('seriesRepository', () => {
 
 			expect(poolQuery).toHaveBeenCalledTimes(1)
 			expect(poolQuery.mock.calls[0]![0]).toContain(
-				'INSERT INTO series (title_en, title_cas, title_lat, year, tmdb_id, poster, backdrop_path, description, popularity, genres) VALUES',
+				'INSERT INTO series (title_en, title_cas, title_lat, year, tmdb_id, poster, telegram_poster_id, backdrop_path, description, popularity, genres) VALUES',
 			)
 			expect(poolQuery.mock.calls[0]![1]).toEqual([
 				'Breaking Bad',
@@ -101,6 +102,7 @@ describe('seriesRepository', () => {
 				2008,
 				1396,
 				'https://image.tmdb.org/t/p/poster.jpg',
+				500,
 				'https://image.tmdb.org/t/p/backdrop.jpg',
 				'A chemistry teacher turns to crime.',
 				100.5,

@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import type { ISeriesToSave } from '../entities/series.ts'
+import type { ISeriesInput } from '../entities/series.ts'
 import type { ISaveSeriesWithEpisodesParams } from '../services/episodes.ts'
 import { EpisodeSchema } from './episode.ts'
 
-const SeriesSchema: z.ZodType<ISeriesToSave> = z
+const SeriesSchema: z.ZodType<ISeriesInput> = z
 	.object({
 		tmdb_id: z.number().int(),
 		title_en: z.string(),

@@ -1,5 +1,5 @@
 import type { IEpisodeToSave } from '../entities/episode.ts'
-import type { ISeriesToSave } from '../entities/series.ts'
+import type { ISeries, ISeriesInput } from '../entities/series.ts'
 import { getEpisodeCaption } from '../helpers/getEpisodeCaption.ts'
 import { partitionEpisodes } from '../helpers/partitionEpisodes.ts'
 import { episodeRepository } from '../repositories/episode.ts'
@@ -10,7 +10,7 @@ import { telegramService } from './telegram.ts'
 
 export interface ISaveSeriesWithEpisodesParams {
 	episodesToSave: IEpisodeToSave[]
-	series: ISeriesToSave
+	series: ISeriesInput
 }
 
 function getIncomingMessageIds(episodes: IEpisodeToSave[]): number[] {
@@ -50,10 +50,17 @@ async function markIncomingEpisodesAsProcessed(messageIds: number[]) {
 	}
 }
 
+async function createSeriesWithPoster(series: ISeriesInput): Promise<ISeries> {
+	const telegram_poster_id = await telegramService.sendSeriesPoster(series)
+	return seriesRepository.saveSeries({ ...series, telegram_poster_id })
+}
+
 async function saveSeriesWithEpisodes({ episodesToSave, series }: ISaveSeriesWithEpisodesParams): Promise<void> {
 	const [existentSeries] = await seriesRepository.getSeries({ tmdb_id: series.tmdb_id })
-	const serieWasCreated = !existentSeries
-	const currentSeries = existentSeries ?? (await seriesRepository.saveSeries(series))
+
+	if (!existentSeries && episodesToSave.length === 0) return
+
+	const currentSeries = existentSeries ?? (await createSeriesWithPoster(series))
 
 	const existentEpisodes = await episodeRepository.getEpisodes({ series_id: currentSeries.id })
 	const { toSave, toUpdate } = partitionEpisodes(episodesToSave, existentEpisodes)
@@ -63,9 +70,6 @@ async function saveSeriesWithEpisodes({ episodesToSave, series }: ISaveSeriesWit
 
 	if (publishedToSave.length !== 0) await episodeRepository.saveEpisodes(currentSeries.id, publishedToSave)
 	if (publishedToUpdate.length !== 0) await episodeRepository.updateEpisodes(publishedToUpdate)
-
-	const hasChanges = toSave.length !== 0 || toUpdate.length !== 0
-	if (serieWasCreated && !hasChanges) await seriesRepository.deleteSeries(currentSeries.id)
 
 	await markIncomingEpisodesAsProcessed(getIncomingMessageIds(episodesToSave))
 }
