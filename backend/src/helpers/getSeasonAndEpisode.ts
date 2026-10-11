@@ -5,6 +5,7 @@ export interface ISeasonEpisode {
 
 const SEASON_EPISODE_PATTERNS: RegExp[] = [
 	/\btemp (?<season>\d{1,2}) cap (?<episode>\d{1,2})\b/,
+	/\btemp\. (?<season>\d{1,2})\/ cap\. (?<episode>\d{1,2})\b/,
 	/\btemporada (?<season>\d{1,2}) episodio (?<episode>\d{1,2})\b/,
 	/\b(?<season>\d{1,2})x(?<episode>\d{1,2})\b/,
 ]
