@@ -18,6 +18,9 @@ describe('getSeasonAndEpisode', () => {
 		{ caption: 'temp 1\ncap 02', expected: { season: 1, episode_number: 2 } },
 		{ caption: 'EL JUEGO DEL CALAMAR/ TEMP. 1/ CAP. 1', expected: { season: 1, episode_number: 1 } },
 		{ caption: 'EL JUEGO DEL CALAMAR/ TEMP. 1/ CAP. 5', expected: { season: 1, episode_number: 5 } },
+		{ caption: 'TEMPORADA 01 CAPÍTULO 01', expected: { season: 1, episode_number: 1 } },
+		{ caption: 'temporada 4 CAPITULO 06', expected: { season: 4, episode_number: 6 } },
+		{ caption: 'TEMPORADA 01 CAPÍTULO 01\nAudio Latino 🇲🇽', expected: { season: 1, episode_number: 1 } },
 	])('parses "$caption"', ({ caption, expected }) => {
 		expect(getSeasonAndEpisode(caption)).toEqual(expected)
 	})
