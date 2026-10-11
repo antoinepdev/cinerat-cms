@@ -16,6 +16,8 @@ describe('getSeasonAndEpisode', () => {
 		{ caption: 'temp  1  cap  01', expected: { season: 1, episode_number: 1 } },
 		{ caption: '  temp 1 cap 02  ', expected: { season: 1, episode_number: 2 } },
 		{ caption: 'temp 1\ncap 02', expected: { season: 1, episode_number: 2 } },
+		{ caption: 'EL JUEGO DEL CALAMAR/ TEMP. 1/ CAP. 1', expected: { season: 1, episode_number: 1 } },
+		{ caption: 'EL JUEGO DEL CALAMAR/ TEMP. 1/ CAP. 5', expected: { season: 1, episode_number: 5 } },
 	])('parses "$caption"', ({ caption, expected }) => {
 		expect(getSeasonAndEpisode(caption)).toEqual(expected)
 	})
