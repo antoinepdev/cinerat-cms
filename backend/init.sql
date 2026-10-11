@@ -56,6 +56,7 @@ CREATE TABLE series (
     year SMALLINT NOT NULL CHECK ( year > 1900 AND year <= 2026),
     tmdb_id INT NOT NULL UNIQUE,
     poster TEXT NOT NULL,
+    telegram_poster_id INT NOT NULL,
     backdrop_path TEXT NOT NULL,
     description TEXT NOT NULL,
     popularity FLOAT NOT NULL,
