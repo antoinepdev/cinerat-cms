@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { IEpisode, IEpisodeToSave } from '../entities/episode.ts'
 import type { ISeries, ISeriesToSave } from '../entities/series.ts'
+import type { ISeriesSendDelay } from '../helpers/seriesSendDelay.ts'
 import { episodeRepository } from '../repositories/episode.ts'
 import { incomingEpisodesRepository } from '../repositories/incomingEpisode.ts'
 import { seriesRepository } from '../repositories/series.ts'
@@ -106,7 +107,7 @@ function mockMarkAsProcessed() {
 
 function mockSendEpisode() {
 	vi.mocked(telegramService.sendEpisode).mockImplementation(
-		async (messageId: number, _episodeCaption: string) => messageId + 1000,
+		async (messageId: number, _episodeCaption: string, _delay: ISeriesSendDelay) => messageId + 1000,
 	)
 }
 
@@ -156,7 +157,7 @@ describe('episodeService', () => {
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave, series: makeSeriesToSave() })
 
-			expect(telegramService.sendEpisode).toHaveBeenCalledWith(111, '4x07\nEspañol castellano 🇪🇸')
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(111, '4x07\nEspañol castellano 🇪🇸', expect.any(Object))
 			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(42, [{ ...makeEpisodeToSave(), telegram_file_id_cas: 1111 }])
 			expect(episodeRepository.updateEpisodes).not.toHaveBeenCalled()
 		})
@@ -311,11 +312,28 @@ describe('episodeService', () => {
 
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
 
-			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(1, 111, '4x07\nEspañol castellano 🇪🇸')
-			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(2, 222, '4x07\nEspañol latino 🇲🇽')
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(1, 111, '4x07\nEspañol castellano 🇪🇸', expect.any(Object))
+			expect(telegramService.sendEpisode).toHaveBeenNthCalledWith(2, 222, '4x07\nEspañol latino 🇲🇽', expect.any(Object))
 			expect(episodeRepository.saveEpisodes).toHaveBeenCalledWith(7, [
 				{ ...incoming, telegram_file_id_cas: 1111, telegram_file_id_lat: 1222 },
 			])
+		})
+
+		it('shares the same adaptive delay across every episode of the run', async () => {
+			vi.mocked(seriesRepository.getSeries).mockResolvedValue([makeSeries()])
+			vi.mocked(episodeRepository.getEpisodes).mockResolvedValue([])
+			vi.mocked(episodeRepository.saveEpisodes).mockResolvedValue([makeEpisode()])
+			mockSendEpisode()
+			mockMarkAsProcessed()
+
+			const incoming = makeEpisodeToSave({ telegram_file_id_cas: 111, telegram_file_id_lat: 222 })
+
+			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
+
+			const firstDelay = vi.mocked(telegramService.sendEpisode).mock.calls[0]![2]
+			const secondDelay = vi.mocked(telegramService.sendEpisode).mock.calls[1]![2]
+
+			expect(firstDelay).toBe(secondDelay)
 		})
 
 		it('copies only the new language when filling a cell', async () => {
@@ -337,7 +355,7 @@ describe('episodeService', () => {
 			await episodeService.saveSeriesWithEpisodes({ episodesToSave: [incoming], series: makeSeriesToSave() })
 
 			expect(telegramService.sendEpisode).toHaveBeenCalledTimes(1)
-			expect(telegramService.sendEpisode).toHaveBeenCalledWith(222, '4x07\nEspañol latino 🇲🇽')
+			expect(telegramService.sendEpisode).toHaveBeenCalledWith(222, '4x07\nEspañol latino 🇲🇽', expect.any(Object))
 			expect(episodeRepository.updateEpisodes).toHaveBeenCalledWith([{ ...incoming, id: 1, telegram_file_id_lat: 1222 }])
 			expect(episodeRepository.saveEpisodes).not.toHaveBeenCalled()
 		})
