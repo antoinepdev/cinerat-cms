@@ -2,6 +2,7 @@ import type TelegramBot from 'node-telegram-bot-api'
 import { describe, expect, it, vi } from 'vitest'
 import type { IMovie } from '../entities/movie.ts'
 import type { ISeriesInput } from '../entities/series.ts'
+import type { ISeriesSendDelay } from '../helpers/seriesSendDelay.ts'
 import { sleep } from '../helpers/sleep.ts'
 import {
 	bot,
@@ -9,7 +10,6 @@ import {
 	MOVIE_LISTENER_GROUP_ID,
 	SERIES_CONTAINER_GROUP_ID,
 	SERIES_LISTENER_GROUP_ID,
-	SERIES_SEND_DELAY_MS,
 	SERIES_SEND_MAX_ATTEMPTS,
 	seriesBot,
 } from '../provider/telegram.ts'
@@ -32,7 +32,6 @@ vi.mock('../provider/telegram.ts', () => ({
 	MOVIE_LISTENER_GROUP_ID: 102,
 	SERIES_CONTAINER_GROUP_ID: 103,
 	SERIES_LISTENER_GROUP_ID: 104,
-	SERIES_SEND_DELAY_MS: 1000,
 	SERIES_SEND_MAX_ATTEMPTS: 3,
 }))
 
@@ -110,6 +109,14 @@ function makeBadRequestError(): Error {
 		code: 'ETELEGRAM',
 		response: { body: { error_code: 400, description: 'Bad Request: chat not found' } },
 	})
+}
+
+function makeDelay(currentMs = 1000): ISeriesSendDelay {
+	return {
+		current: vi.fn(() => currentMs),
+		onSent: vi.fn(),
+		onFloodWait: vi.fn(),
+	}
 }
 
 describe('telegramService', () => {
@@ -220,40 +227,48 @@ describe('telegramService', () => {
 	describe('sendEpisode', () => {
 		const caption = '4x07\nEspañol castellano 🇪🇸'
 
-		it('copies the episode to the series container group with the caption, then waits the configured delay', async () => {
+		it('copies the episode to the series container group with the caption, then waits the adaptive delay', async () => {
+			const delay = makeDelay()
 			vi.mocked(seriesBot.copyMessage).mockResolvedValue({ message_id: 900 })
 
-			const result = await telegramService.sendEpisode(777, caption)
+			const result = await telegramService.sendEpisode(777, caption, delay)
 
 			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(1)
 			expect(seriesBot.copyMessage).toHaveBeenCalledWith(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, 777, { caption })
+			expect(delay.onSent).toHaveBeenCalledTimes(1)
+			expect(delay.onFloodWait).not.toHaveBeenCalled()
 			expect(sleep).toHaveBeenCalledTimes(1)
-			expect(sleep).toHaveBeenCalledWith(SERIES_SEND_DELAY_MS)
+			expect(sleep).toHaveBeenCalledWith(delay.current())
 			expect(result).toBe(900)
 		})
 
 		it('retries when Telegram answers 429 and honours retry_after', async () => {
 			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+			const delay = makeDelay()
 			vi.mocked(seriesBot.copyMessage).mockRejectedValueOnce(makeFloodWaitError(5)).mockResolvedValueOnce({ message_id: 901 })
 
-			const result = await telegramService.sendEpisode(777, caption)
+			const result = await telegramService.sendEpisode(777, caption, delay)
 
 			expect(result).toBe(901)
 			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(2)
+			expect(delay.onFloodWait).toHaveBeenCalledTimes(1)
+			expect(delay.onSent).toHaveBeenCalledTimes(1)
 			expect(sleep).toHaveBeenNthCalledWith(1, 5000)
-			expect(sleep).toHaveBeenNthCalledWith(2, SERIES_SEND_DELAY_MS)
+			expect(sleep).toHaveBeenNthCalledWith(2, delay.current())
 			expect(consoleLog).toHaveBeenCalledTimes(1)
-			expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('SERIES_SEND_DELAY_MS=1000'))
 			consoleLog.mockRestore()
 		})
 
 		it(`gives up after ${SERIES_SEND_MAX_ATTEMPTS} attempts when Telegram keeps answering 429`, async () => {
 			const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
+			const delay = makeDelay()
 			vi.mocked(seriesBot.copyMessage).mockRejectedValue(makeFloodWaitError(5))
 
-			await expect(telegramService.sendEpisode(777, caption)).rejects.toThrow('429 Too Many Requests')
+			await expect(telegramService.sendEpisode(777, caption, delay)).rejects.toThrow('429 Too Many Requests')
 
 			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
+			expect(delay.onFloodWait).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
+			expect(delay.onSent).not.toHaveBeenCalled()
 			expect(sleep).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS - 1)
 			expect(sleep).toHaveBeenCalledWith(5000)
 			expect(consoleLog).toHaveBeenCalledTimes(SERIES_SEND_MAX_ATTEMPTS)
@@ -261,11 +276,14 @@ describe('telegramService', () => {
 		})
 
 		it('does not retry non-429 telegram errors', async () => {
+			const delay = makeDelay()
 			vi.mocked(seriesBot.copyMessage).mockRejectedValue(makeBadRequestError())
 
-			await expect(telegramService.sendEpisode(777, caption)).rejects.toThrow('400 Bad Request')
+			await expect(telegramService.sendEpisode(777, caption, delay)).rejects.toThrow('400 Bad Request')
 
 			expect(seriesBot.copyMessage).toHaveBeenCalledTimes(1)
+			expect(delay.onFloodWait).not.toHaveBeenCalled()
+			expect(delay.onSent).not.toHaveBeenCalled()
 			expect(sleep).not.toHaveBeenCalled()
 		})
 	})
