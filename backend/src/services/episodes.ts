@@ -2,6 +2,7 @@ import type { IEpisodeToSave } from '../entities/episode.ts'
 import type { ISeries, ISeriesInput } from '../entities/series.ts'
 import { getEpisodeCaption } from '../helpers/getEpisodeCaption.ts'
 import { partitionEpisodes } from '../helpers/partitionEpisodes.ts'
+import { createSeriesSendDelay, type ISeriesSendDelay } from '../helpers/seriesSendDelay.ts'
 import { episodeRepository } from '../repositories/episode.ts'
 import { incomingEpisodesRepository } from '../repositories/incomingEpisode.ts'
 import { seriesRepository } from '../repositories/series.ts'
@@ -18,7 +19,7 @@ function getIncomingMessageIds(episodes: IEpisodeToSave[]): number[] {
 	return [...new Set(messageIds.filter((messageId): messageId is number => Boolean(messageId)))]
 }
 
-async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Promise<T[]> {
+async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[], delay: ISeriesSendDelay): Promise<T[]> {
 	const publishedEpisodes: T[] = []
 
 	for (const episode of episodes) {
@@ -28,6 +29,7 @@ async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Pro
 			publishedEpisode.telegram_file_id_cas = await telegramService.sendEpisode(
 				publishedEpisode.telegram_file_id_cas,
 				episodeCaption,
+				delay,
 			)
 		}
 		if (publishedEpisode.telegram_file_id_lat) {
@@ -35,6 +37,7 @@ async function publishEpisodeFiles<T extends IEpisodeToSave>(episodes: T[]): Pro
 			publishedEpisode.telegram_file_id_lat = await telegramService.sendEpisode(
 				publishedEpisode.telegram_file_id_lat,
 				episodeCaption,
+				delay,
 			)
 		}
 		publishedEpisodes.push(publishedEpisode)
@@ -65,8 +68,9 @@ async function saveSeriesWithEpisodes({ episodesToSave, series }: ISaveSeriesWit
 	const existentEpisodes = await episodeRepository.getEpisodes({ series_id: currentSeries.id })
 	const { toSave, toUpdate } = partitionEpisodes(episodesToSave, existentEpisodes)
 
-	const publishedToSave = toSave.length !== 0 ? await publishEpisodeFiles(toSave) : toSave
-	const publishedToUpdate = toUpdate.length !== 0 ? await publishEpisodeFiles(toUpdate) : toUpdate
+	const delay = createSeriesSendDelay()
+	const publishedToSave = toSave.length !== 0 ? await publishEpisodeFiles(toSave, delay) : toSave
+	const publishedToUpdate = toUpdate.length !== 0 ? await publishEpisodeFiles(toUpdate, delay) : toUpdate
 
 	if (publishedToSave.length !== 0) await episodeRepository.saveEpisodes(currentSeries.id, publishedToSave)
 	if (publishedToUpdate.length !== 0) await episodeRepository.updateEpisodes(publishedToUpdate)

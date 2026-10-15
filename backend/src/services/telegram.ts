@@ -3,6 +3,7 @@ import type { ISeriesInput } from '../entities/series.ts'
 import { getMovieCaption } from '../helpers/getMovieCaption.ts'
 import { getPosterCaption } from '../helpers/getPosterCaption.ts'
 import { isTelegramApiError } from '../helpers/isTelegramApiError.ts'
+import type { ISeriesSendDelay } from '../helpers/seriesSendDelay.ts'
 import { sleep } from '../helpers/sleep.ts'
 import {
 	bot,
@@ -10,7 +11,6 @@ import {
 	MOVIE_LISTENER_GROUP_ID,
 	SERIES_CONTAINER_GROUP_ID,
 	SERIES_LISTENER_GROUP_ID,
-	SERIES_SEND_DELAY_MS,
 	SERIES_SEND_MAX_ATTEMPTS,
 	seriesBot,
 } from '../provider/telegram.ts'
@@ -83,22 +83,24 @@ async function sendSeriesPoster(series: ISeriesInput): Promise<number> {
 	return sendedPoster.message_id
 }
 
-async function sendEpisode(episodeMessageId: number, episodeCaption: string): Promise<number> {
+async function sendEpisode(episodeMessageId: number, episodeCaption: string, delay: ISeriesSendDelay): Promise<number> {
 	for (let attempt = 1; attempt <= SERIES_SEND_MAX_ATTEMPTS; attempt++) {
 		try {
 			const copiedEpisode = await seriesBot.copyMessage(SERIES_CONTAINER_GROUP_ID, SERIES_LISTENER_GROUP_ID, episodeMessageId, {
 				caption: episodeCaption,
 			})
-			await sleep(SERIES_SEND_DELAY_MS)
+			delay.onSent()
+			await sleep(delay.current())
 			return copiedEpisode.message_id
 		} catch (error) {
 			const floodWaitSeconds = getFloodWaitSeconds(error)
 			if (floodWaitSeconds === undefined) throw error
 
+			delay.onFloodWait()
 			const description = isTelegramApiError(error) ? (error.response.body.description ?? '') : ''
 			console.log(
 				`[telegram] ${description} while copying episode ${episodeMessageId}: attempt ${attempt}/${SERIES_SEND_MAX_ATTEMPTS}, ` +
-					`retrying in ${floodWaitSeconds}s (SERIES_SEND_DELAY_MS=${SERIES_SEND_DELAY_MS}) — raise SERIES_SEND_DELAY_MS if this repeats`,
+					`retrying in ${floodWaitSeconds}s (delay=${delay.current()}ms)`,
 			)
 			if (attempt === SERIES_SEND_MAX_ATTEMPTS) throw error
 			await sleep(floodWaitSeconds * 1000)
