@@ -5,7 +5,6 @@ export default defineConfig({
 		mockReset: true,
 		coverage: {
 			provider: 'v8',
-			all: true,
 			include: ['src/**/*.ts'],
 			exclude: ['src/**/*.test.ts'],
 		},
